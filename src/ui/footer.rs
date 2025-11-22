@@ -1,7 +1,7 @@
 use ratatui::widgets::{Block, Borders, Paragraph};
 
-pub fn new(title: &str) -> Paragraph<'_> {
-    Paragraph::new(title)
-        .block(Block::default().borders(Borders::ALL))
+pub fn new() -> Paragraph<'static> {
+    Paragraph::new("footer")
+        .block(Block::default().borders(Borders::TOP))
         .centered()
 }
