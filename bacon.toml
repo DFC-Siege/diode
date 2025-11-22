@@ -1,0 +1,6 @@
+[jobs.clippy-fix]
+command = ["cargo", "clippy", "--fix", "--allow-dirty", "--allow-staged"]
+need_stdout = true
+
+[keybindings]
+f = "job:clippy-fix"
