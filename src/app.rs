@@ -1,5 +1,9 @@
-use crossterm::event::EventStream;
-use ratatui::{DefaultTerminal, Frame, text::Line};
+use color_eyre::Result;
+use crossterm::event::{Event, EventStream, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use futures::{FutureExt, StreamExt};
+use ratatui::DefaultTerminal;
+
+use crate::ui::app::draw;
 
 #[derive(Debug, Default)]
 pub struct App {
@@ -15,26 +19,10 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.running = true;
         while self.running {
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| draw(frame))?;
             self.handle_crossterm_events().await?;
         }
         Ok(())
-    }
-
-    fn draw(&mut self, frame: &mut Frame) {
-        let title = Line::from("Ratatui Simple Template")
-            .bold()
-            .blue()
-            .centered();
-        let text = "Hello, Ratatui!\n\n\
-            Created using https://github.com/ratatui/templates\n\
-            Press `Esc`, `Ctrl-C` or `q` to stop running.";
-        frame.render_widget(
-            Paragraph::new(text)
-                .block(Block::bordered().title(title))
-                .centered(),
-            frame.area(),
-        )
     }
 
     async fn handle_crossterm_events(&mut self) -> Result<()> {
