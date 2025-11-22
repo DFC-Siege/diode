@@ -19,7 +19,7 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.running = true;
         while self.running {
-            terminal.draw(|frame| draw(frame))?;
+            terminal.draw(draw)?;
             self.handle_crossterm_events().await?;
         }
         Ok(())

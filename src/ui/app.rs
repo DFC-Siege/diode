@@ -1,22 +1,19 @@
 use ratatui::{
     Frame,
-    style::Stylize,
-    text::Line,
-    widgets::{Block, Paragraph},
+    layout::{Constraint, Layout},
 };
 
+use crate::ui::footer;
+use crate::ui::header;
+
 pub fn draw(frame: &mut Frame) {
-    let title = Line::from("Ratatui Simple Template")
-        .bold()
-        .blue()
-        .centered();
-    let text = "Hello, Ratatui!\n\n\
-            Created using https://github.com/ratatui/templates\n\
-            Press `Esc`, `Ctrl-C` or `q` to stop running.";
-    frame.render_widget(
-        Paragraph::new(text)
-            .block(Block::bordered().title(title))
-            .centered(),
-        frame.area(),
-    )
+    let chunks = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(0),
+        Constraint::Length(3),
+    ])
+    .split(frame.area());
+
+    frame.render_widget(header::new("duality"), chunks[0]);
+    frame.render_widget(footer::new("footer"), chunks[2]);
 }
