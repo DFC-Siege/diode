@@ -1,0 +1,18 @@
+[package]
+name = "duality"
+version = "0.1.0"
+description = "This project aims to make executing file operations like copy and move between two directories easier."
+authors = ["Daniel da Silva <dsilvaba@pm.me>"]
+license = "MIT"
+edition = "2024"
+
+[[bin]]
+name = "duality"
+path = "src/main.rs"
+
+[dependencies]
+color-eyre = "0.6.3"
+crossterm = { version = "0.29", features = ["event-stream"] }
+futures = "0.3.31"
+ratatui = "0.29.0"
+tokio = { version = "1.40.0", features = ["full"] }
