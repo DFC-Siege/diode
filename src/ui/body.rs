@@ -3,27 +3,35 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
-pub fn create_block() -> Block<'static> {
-    Block::default().title("Content")
+pub struct LayoutPanePair {
+    pub rect: Rect,
+    pub pane: Paragraph<'static>,
 }
 
-pub fn create_layout(area: Rect) -> [Rect; 3] {
+pub fn new(area: Rect) -> [LayoutPanePair; 2] {
+    let rects = create_layout(area);
+    [
+        LayoutPanePair {
+            rect: rects[0],
+            pane: create_pane("Left Pane"),
+        },
+        LayoutPanePair {
+            rect: rects[1],
+            pane: create_pane("Right Pane"),
+        },
+    ]
+}
+
+fn create_layout(area: Rect) -> [Rect; 2] {
     let rects = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Length(1),
-            Constraint::Percentage(50),
-        ])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area);
-
-    [rects[0], rects[1], rects[2]]
+    [rects[0], rects[1]]
 }
 
-pub fn create_pane(text: &str) -> Paragraph<'_> {
-    Paragraph::new(text).block(Block::default()).centered()
-}
-
-pub fn separator() -> Block<'static> {
-    Block::default().borders(Borders::LEFT)
+fn create_pane(text: &str) -> Paragraph<'static> {
+    Paragraph::new(text.to_string())
+        .block(Block::default().borders(Borders::ALL))
+        .centered()
 }
