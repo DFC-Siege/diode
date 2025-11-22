@@ -1,9 +1,9 @@
 [package]
-name = "duality"
+name = "diode"
 version = "0.1.0"
 description = "This project aims to make executing file operations like copy and move between two directories easier."
 authors = ["Daniel da Silva <dsilvaba@pm.me>"]
-license = "MIT"
+license = "GPL-3.0"
 edition = "2024"
 
 [[bin]]
