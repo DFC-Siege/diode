@@ -1,3 +1,5 @@
+// TODO: Remove
+#![allow(dead_code)]
 mod app;
 mod file_management;
 mod ui;
@@ -14,9 +16,8 @@ async fn main() -> color_eyre::Result<()> {
     let result = fs::read_dir("./")?;
     let dir = Directory::from(&result.into_iter().next().unwrap()?)?;
     println!("{dir:?}");
-    // let terminal = ratatui::init();
-    // let result = App::new().run(terminal).await;
-    // ratatui::restore();
-    // result
-    Ok(())
+    let terminal = ratatui::init();
+    let result = App::new().run(terminal).await;
+    ratatui::restore();
+    result
 }
