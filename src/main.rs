@@ -5,7 +5,7 @@ mod file_management;
 mod state;
 mod ui;
 
-use crate::{file_management::directory::Directory, state::file_system_state::FileSystemState};
+use crate::{file_management::directory::Directory, state::diode::diode_state::DiodeState};
 use app::App;
 use std::env;
 
@@ -16,8 +16,8 @@ async fn main() -> color_eyre::Result<()> {
     let left_dir = Directory::try_from(&current_dir)?;
     let right_dir = Directory::try_from(&current_dir)?;
     let terminal = ratatui::init();
-    let file_state = FileSystemState::new(left_dir, right_dir);
-    let result = App::new(file_state).run(terminal).await;
+    let diode_state = DiodeState::new(left_dir.into(), right_dir.into());
+    let result = App::new(diode_state).run(terminal).await;
     ratatui::restore();
     result
 }

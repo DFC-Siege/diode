@@ -1,5 +1,5 @@
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::OsString,
     fs::{self, DirEntry, Metadata},
     io::{self},
     path::{Path, PathBuf},
@@ -9,25 +9,13 @@ use crate::file_management::entry::Entry;
 
 #[derive(Debug)]
 pub struct Directory {
-    name: OsString,
-    path: PathBuf,
-    metadata: Metadata,
-    entries: Vec<Entry>,
+    pub name: OsString,
+    pub path: PathBuf,
+    pub metadata: Metadata,
+    pub entries: Vec<Entry>,
 }
 
 impl Directory {
-    pub fn name(&self) -> &OsStr {
-        &self.name
-    }
-
-    pub fn path(&self) -> &PathBuf {
-        &self.path
-    }
-
-    pub fn entries(&self) -> &[Entry] {
-        &self.entries
-    }
-
     pub fn try_from_recursive(
         entry: &DirEntry,
         max_depth: usize,

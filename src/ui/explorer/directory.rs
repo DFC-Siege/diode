@@ -1,7 +1,7 @@
 use ratatui::widgets::ListItem;
 
-use crate::file_management::directory::Directory;
+use crate::state::diode::directory_state::DirectoryState;
 
-pub fn create_list_item(directory: &Directory) -> ListItem<'_> {
-    ListItem::new(format!("📁 {}", directory.name().to_string_lossy()))
+pub fn create_list_item(directory: &DirectoryState) -> ListItem<'_> {
+    ListItem::new(format!("📁 {}", directory.name.to_string_lossy()))
 }

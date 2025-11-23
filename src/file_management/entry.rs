@@ -1,6 +1,6 @@
 use std::{
     ffi::OsStr,
-    fs::DirEntry,
+    fs::{DirEntry, Metadata},
     io::{self},
     path::PathBuf,
 };
@@ -17,17 +17,25 @@ pub enum Entry {
 impl Entry {
     pub fn name(&self) -> &OsStr {
         match self {
-            Entry::File(v) => v.name(),
-            Entry::Directory(v) => v.name(),
-            Entry::Symlink(v) => v.name(),
+            Entry::File(v) => &v.name,
+            Entry::Directory(v) => &v.name,
+            Entry::Symlink(v) => &v.name,
         }
     }
 
     pub fn path(&self) -> &PathBuf {
         match self {
-            Entry::File(v) => v.path(),
-            Entry::Directory(v) => v.path(),
-            Entry::Symlink(v) => v.path(),
+            Entry::File(v) => &v.path,
+            Entry::Directory(v) => &v.path,
+            Entry::Symlink(v) => &v.path,
+        }
+    }
+
+    pub fn metadata(&self) -> &Metadata {
+        match self {
+            Entry::File(v) => &v.metadata,
+            Entry::Directory(v) => &v.metadata,
+            Entry::Symlink(v) => &v.metadata,
         }
     }
 

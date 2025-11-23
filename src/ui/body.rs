@@ -1,7 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::{
-    state::file_system_state::FileSystemState,
+    state::diode::diode_state::DiodeState,
     ui::explorer::explorer_pane::{self, ExplorerPane},
 };
 
@@ -10,16 +10,16 @@ pub struct LayoutPanePair<'a> {
     pub pane: ExplorerPane<'a>,
 }
 
-pub fn new(area: Rect, file_system_state: &FileSystemState) -> [LayoutPanePair<'_>; 2] {
+pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair<'_>; 2] {
     let rects = create_layout(area);
     [
         LayoutPanePair {
             rect: rects[0],
-            pane: explorer_pane::create_pane(file_system_state.left_state.root.entries()),
+            pane: explorer_pane::create_pane(&diode_state.left_state.entries),
         },
         LayoutPanePair {
             rect: rects[1],
-            pane: explorer_pane::create_pane(file_system_state.right_state.root.entries()),
+            pane: explorer_pane::create_pane(&diode_state.right_state.entries),
         },
     ]
 }
