@@ -19,7 +19,7 @@ impl From<Directory> for DirectoryState {
             path: directory.path,
             metadata: directory.metadata,
             entries: directory.entries.into_iter().map(|v| v.into()).collect(),
-            collapsed: false,
+            collapsed: true,
             selected: false,
         }
     }
