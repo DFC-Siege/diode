@@ -5,12 +5,9 @@ mod file_management;
 mod state;
 mod ui;
 
-use crate::{
-    file_management::{directory::Directory, entry::EntryType},
-    state::file_state::FileState,
-};
+use crate::{file_management::directory::Directory, state::file_state::FileState};
 use app::App;
-use std::{env, fs};
+use std::env;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {

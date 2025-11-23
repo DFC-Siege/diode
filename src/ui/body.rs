@@ -3,14 +3,17 @@ use ratatui::{
     widgets::List,
 };
 
-use crate::{file_management::entry::EntryType, state::file_state::FileState};
+use crate::{
+    file_management::entry::EntryType, state::file_state::FileState,
+    ui::explorer::explorer_pane::create_list,
+};
 
-pub struct LayoutPanePair {
+pub struct LayoutPanePair<'a> {
     pub rect: Rect,
-    pub pane: List<'static>,
+    pub pane: List<'a>,
 }
 
-pub fn new(area: Rect, file_state: &FileState) -> [LayoutPanePair; 2] {
+pub fn new(area: Rect, file_state: &FileState) -> [LayoutPanePair<'_>; 2] {
     let rects = create_layout(area);
     [
         LayoutPanePair {
@@ -32,6 +35,6 @@ fn create_layout(area: Rect) -> [Rect; 2] {
     [rects[0], rects[1]]
 }
 
-fn create_pane(entries: &[EntryType]) -> List<'static> {
-    todo!()
+fn create_pane(entries: &[EntryType]) -> List<'_> {
+    create_list(entries)
 }
