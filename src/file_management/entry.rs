@@ -79,7 +79,7 @@ impl Symlink {
             name: entry.file_name(),
             path: entry.path(),
             metadata: entry.metadata()?,
-            target: fs::read_link("/path/to/symlink")?,
+            target: fs::read_link(entry.path())?,
         })
     }
 }
