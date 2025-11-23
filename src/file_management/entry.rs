@@ -92,10 +92,16 @@ impl Directory {
         if current_depth > max_depth {
             return Ok(Vec::new());
         }
-
         Ok(fs::read_dir(path)?
-            .filter_map(|v| v.ok())
-            .filter_map(|v| EntryType::try_from_recursive(&v, max_depth, current_depth).ok())
+            .filter_map(|v| {
+                v.inspect_err(|e| eprintln!("Failed to read dir entry: {}", e))
+                    .ok()
+            })
+            .filter_map(|v| {
+                EntryType::try_from_recursive(&v, max_depth, current_depth)
+                    .inspect_err(|e| eprintln!("Failed to process {:?}: {}", v.path(), e))
+                    .ok()
+            })
             .collect())
     }
 }
