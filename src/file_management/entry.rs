@@ -48,6 +48,10 @@ macro_rules! define_entries {
             fn path(&self) -> &OsStr {
                 self.path.as_os_str()
             }
+
+            fn from(entry: &DirEntry) -> io::Result<$name> {
+                $name::from(entry)
+            }
         }
     )*
     };
@@ -92,6 +96,15 @@ impl Directory {
         })
     }
 
+    fn from_without_entries(entry: &DirEntry) -> io::Result<Self> {
+        Ok(Self {
+            name: entry.file_name(),
+            path: entry.path(),
+            metadata: entry.metadata()?,
+            entries: Vec::new(),
+        })
+    }
+
     fn read_directory_recursive(path: &Path, max_depth: usize) -> io::Result<Vec<Box<dyn Entry>>> {
         fn recurse(
             path: &Path,
@@ -116,9 +129,12 @@ impl Directory {
                     (true, _, _) => {
                         paths.push(Box::new(graceful_return!(File::from(&entry))));
                     }
-                    (_, true, _) => {
-                        paths.push(Box::new(graceful_return!(Directory::from(&entry))));
-                    }
+                    (_, true, _) => match current_depth >= max_depth {
+                        true => paths.push(Box::new(graceful_return!(
+                            Directory::from_without_entries(&entry)
+                        ))),
+                        false => paths.push(Box::new(graceful_return!(Directory::from(&entry)))),
+                    },
                     (_, _, true) => {
                         paths.push(Box::new(graceful_return!(Symlink::from(&entry))));
                     }
@@ -142,4 +158,7 @@ impl Directory {
 pub trait Entry: std::fmt::Debug {
     fn name(&self) -> &OsStr;
     fn path(&self) -> &OsStr;
+    fn from(entry: &DirEntry) -> io::Result<Self>
+    where
+        Self: Sized;
 }
