@@ -1,11 +1,34 @@
-use ratatui::widgets::{List, ListItem};
-
 use crate::{
     file_management::entry::EntryType,
     ui::explorer::{directory, file, symlink},
 };
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{List, ListItem, Paragraph, Widget},
+};
 
-pub fn create_list(entries: &[EntryType]) -> List<'_> {
+pub struct ExplorerPane<'a> {
+    pub list: List<'a>,
+    pub info: Paragraph<'a>,
+}
+
+pub fn create_pane(entries: &[EntryType]) -> ExplorerPane<'_> {
+    ExplorerPane {
+        list: create_list(entries),
+        info: create_info(entries),
+    }
+}
+
+fn create_layout(area: Rect) -> [Rect; 2] {
+    let rects = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
+        .split(area);
+    [rects[0], rects[1]]
+}
+
+fn create_list(entries: &[EntryType]) -> List<'_> {
     let items: Vec<ListItem> = entries
         .iter()
         .map(|v| match v {
@@ -14,6 +37,18 @@ pub fn create_list(entries: &[EntryType]) -> List<'_> {
             EntryType::Symlink(symlink) => symlink::create_list_item(symlink),
         })
         .collect();
-
     List::new(items)
+}
+
+fn create_info(entries: &[EntryType]) -> Paragraph<'_> {
+    let text = format!("{} items", entries.len());
+    Paragraph::new(text)
+}
+
+impl Widget for ExplorerPane<'_> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let layout = create_layout(area);
+        self.list.render(layout[0], buf);
+        self.info.render(layout[1], buf);
+    }
 }

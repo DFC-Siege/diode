@@ -1,16 +1,13 @@
-use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::List,
-};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::{
-    file_management::entry::EntryType, state::file_state::FileState,
-    ui::explorer::explorer_pane::create_list,
+    state::file_state::FileState,
+    ui::explorer::explorer_pane::{self, ExplorerPane},
 };
 
 pub struct LayoutPanePair<'a> {
     pub rect: Rect,
-    pub pane: List<'a>,
+    pub pane: ExplorerPane<'a>,
 }
 
 pub fn new(area: Rect, file_state: &FileState) -> [LayoutPanePair<'_>; 2] {
@@ -18,11 +15,11 @@ pub fn new(area: Rect, file_state: &FileState) -> [LayoutPanePair<'_>; 2] {
     [
         LayoutPanePair {
             rect: rects[0],
-            pane: create_pane(file_state.left_dir.entries()),
+            pane: explorer_pane::create_pane(file_state.left_dir.entries()),
         },
         LayoutPanePair {
             rect: rects[1],
-            pane: create_pane(file_state.right_dir.entries()),
+            pane: explorer_pane::create_pane(file_state.right_dir.entries()),
         },
     ]
 }
@@ -33,8 +30,4 @@ fn create_layout(area: Rect) -> [Rect; 2] {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area);
     [rects[0], rects[1]]
-}
-
-fn create_pane(entries: &[EntryType]) -> List<'_> {
-    create_list(entries)
 }
