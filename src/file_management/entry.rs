@@ -40,7 +40,7 @@ impl EntryType {
         ) {
             (true, _, _) => Ok(EntryType::File(File::try_from(entry)?)),
             (_, true, _) => Ok(EntryType::Directory(Directory::try_from_recursive(
-                entry, 0, 0,
+                entry, 0, 0, // TODO: Define these values in a config.toml
             )?)),
             (_, _, true) => Ok(EntryType::File(File::try_from(entry)?)),
             (_, _, _) => Err(io::Error::new(
