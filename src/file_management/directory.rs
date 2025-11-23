@@ -5,14 +5,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::file_management::entry::EntryType;
+use crate::file_management::entry::Entry;
 
 #[derive(Debug)]
 pub struct Directory {
     name: OsString,
     path: PathBuf,
     metadata: Metadata,
-    entries: Vec<EntryType>,
+    entries: Vec<Entry>,
 }
 
 impl Directory {
@@ -24,7 +24,7 @@ impl Directory {
         &self.path
     }
 
-    pub fn entries(&self) -> &[EntryType] {
+    pub fn entries(&self) -> &[Entry] {
         &self.entries
     }
 
@@ -41,7 +41,7 @@ impl Directory {
         })
     }
 
-    fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> Vec<EntryType> {
+    fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> Vec<Entry> {
         if current_depth > max_depth {
             return Vec::new();
         }
@@ -58,7 +58,7 @@ impl Directory {
                     .ok()
             })
             .filter_map(|v| {
-                EntryType::try_from_recursive(&v, max_depth, current_depth)
+                Entry::try_from_recursive(&v, max_depth, current_depth)
                     .inspect_err(|e| eprintln!("Failed to process {:?}: {}", v.path(), e))
                     .ok()
             })

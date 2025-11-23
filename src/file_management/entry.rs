@@ -8,26 +8,26 @@ use std::{
 use crate::file_management::{directory::Directory, file::File, symlink::Symlink};
 
 #[derive(Debug)]
-pub enum EntryType {
+pub enum Entry {
     File(File),
     Directory(Directory),
     Symlink(Symlink),
 }
 
-impl EntryType {
+impl Entry {
     pub fn name(&self) -> &OsStr {
         match self {
-            EntryType::File(v) => v.name(),
-            EntryType::Directory(v) => v.name(),
-            EntryType::Symlink(v) => v.name(),
+            Entry::File(v) => v.name(),
+            Entry::Directory(v) => v.name(),
+            Entry::Symlink(v) => v.name(),
         }
     }
 
     pub fn path(&self) -> &PathBuf {
         match self {
-            EntryType::File(v) => v.path(),
-            EntryType::Directory(v) => v.path(),
-            EntryType::Symlink(v) => v.path(),
+            Entry::File(v) => v.path(),
+            Entry::Directory(v) => v.path(),
+            Entry::Symlink(v) => v.path(),
         }
     }
 
@@ -38,11 +38,11 @@ impl EntryType {
             file_type.is_dir(),
             file_type.is_symlink(),
         ) {
-            (true, _, _) => Ok(EntryType::File(File::try_from(entry)?)),
-            (_, true, _) => Ok(EntryType::Directory(Directory::try_from_recursive(
+            (true, _, _) => Ok(Entry::File(File::try_from(entry)?)),
+            (_, true, _) => Ok(Entry::Directory(Directory::try_from_recursive(
                 entry, 0, 0, // TODO: Define these values in a config.toml
             )?)),
-            (_, _, true) => Ok(EntryType::File(File::try_from(entry)?)),
+            (_, _, true) => Ok(Entry::File(File::try_from(entry)?)),
             (_, _, _) => Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "file type not supported",
@@ -61,13 +61,13 @@ impl EntryType {
             file_type.is_dir(),
             file_type.is_symlink(),
         ) {
-            (true, _, _) => Ok(EntryType::File(File::try_from(entry)?)),
-            (_, true, _) => Ok(EntryType::Directory(Directory::try_from_recursive(
+            (true, _, _) => Ok(Entry::File(File::try_from(entry)?)),
+            (_, true, _) => Ok(Entry::Directory(Directory::try_from_recursive(
                 entry,
                 max_depth,
                 current_depth + 1,
             )?)),
-            (_, _, true) => Ok(EntryType::File(File::try_from(entry)?)),
+            (_, _, true) => Ok(Entry::File(File::try_from(entry)?)),
             (_, _, _) => Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "file type not supported",

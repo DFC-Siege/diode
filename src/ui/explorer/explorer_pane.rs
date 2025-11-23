@@ -1,5 +1,5 @@
 use crate::{
-    file_management::entry::EntryType,
+    file_management::entry::Entry,
     ui::explorer::{directory, file, symlink},
 };
 use ratatui::{
@@ -13,7 +13,7 @@ pub struct ExplorerPane<'a> {
     pub info: Paragraph<'a>,
 }
 
-pub fn create_pane(entries: &[EntryType]) -> ExplorerPane<'_> {
+pub fn create_pane(entries: &[Entry]) -> ExplorerPane<'_> {
     ExplorerPane {
         list: create_list(entries),
         info: create_info(entries),
@@ -28,19 +28,19 @@ fn create_layout(area: Rect) -> [Rect; 2] {
     [rects[0], rects[1]]
 }
 
-fn create_list(entries: &[EntryType]) -> List<'_> {
+fn create_list(entries: &[Entry]) -> List<'_> {
     let items: Vec<ListItem> = entries
         .iter()
         .map(|v| match v {
-            EntryType::Directory(dir) => directory::create_list_item(dir),
-            EntryType::File(file) => file::create_list_item(file),
-            EntryType::Symlink(symlink) => symlink::create_list_item(symlink),
+            Entry::Directory(dir) => directory::create_list_item(dir),
+            Entry::File(file) => file::create_list_item(file),
+            Entry::Symlink(symlink) => symlink::create_list_item(symlink),
         })
         .collect();
     List::new(items)
 }
 
-fn create_info(entries: &[EntryType]) -> Paragraph<'_> {
+fn create_info(entries: &[Entry]) -> Paragraph<'_> {
     let text = format!("{} items", entries.len());
     Paragraph::new(text)
 }
