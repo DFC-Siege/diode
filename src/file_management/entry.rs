@@ -92,7 +92,7 @@ impl Directory {
             metadata: entry.metadata()?,
             // TODO: Implement config with serde using file at ~/.config/diode/config.toml
             // Increase to preload more directories
-            entries: Self::recurse(&entry.path(), 1, 0)?,
+            entries: Self::recurse(&entry.path(), 0, 0)?,
         })
     }
 
