@@ -14,7 +14,7 @@ use crate::file_management::entry::Directory;
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let result = fs::read_dir("./")?;
-    let dir = Directory::from(&result.into_iter().next().unwrap()?)?;
+    let dir = Directory::try_from(&result.into_iter().next().unwrap()?)?;
     println!("{:#?}", dir);
     let terminal = ratatui::init();
     let result = App::new().run(terminal).await;

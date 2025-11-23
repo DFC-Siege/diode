@@ -33,7 +33,7 @@ macro_rules! define_entries {
     ($($name:ident {$($extra:tt)*})*) => {
         #[derive(Debug)]
         pub enum EntryType {
-            $($name,)*
+            $($name($name),)*
         }
 
         $(
@@ -52,8 +52,8 @@ macro_rules! define_entries {
                 self.path.as_os_str()
             }
 
-            fn from(entry: &DirEntry) -> io::Result<$name> {
-                $name::from(entry)
+            fn try_from(entry: &DirEntry) -> io::Result<$name> {
+                $name::try_from(entry)
             }
         }
     )*
@@ -62,12 +62,12 @@ macro_rules! define_entries {
 
 define_entries! {
     File{metadata: Metadata}
-    Directory {metadata: Metadata, entries: Vec<Box<dyn Entry>>}
+    Directory {metadata: Metadata, entries: Vec<EntryType>}
     Symlink {metadata: Metadata, target: PathBuf}
 }
 
 impl File {
-    pub fn from(entry: &DirEntry) -> io::Result<Self> {
+    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
             path: entry.path(),
@@ -77,7 +77,7 @@ impl File {
 }
 
 impl Symlink {
-    pub fn from(entry: &DirEntry) -> io::Result<Self> {
+    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
             path: entry.path(),
@@ -88,7 +88,7 @@ impl Symlink {
 }
 
 impl Directory {
-    pub fn from(entry: &DirEntry) -> io::Result<Self> {
+    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
             path: entry.path(),
@@ -99,7 +99,7 @@ impl Directory {
         })
     }
 
-    fn from_recursive(
+    fn try_from_recursive(
         entry: &DirEntry,
         max_depth: usize,
         current_depth: usize,
@@ -112,49 +112,58 @@ impl Directory {
         })
     }
 
-    fn recurse(
-        path: &Path,
-        max_depth: usize,
-        current_depth: usize,
-    ) -> io::Result<Vec<Box<dyn Entry>>> {
-        let mut paths: Vec<Box<dyn Entry>> = Vec::new();
+    fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> io::Result<Vec<EntryType>> {
+        let mut paths: Vec<EntryType> = Vec::new();
 
         if current_depth > max_depth {
             return Ok(paths);
         }
 
         let read_dir = graceful_return!(fs::read_dir(path), Ok(paths));
-
         for entry in read_dir {
             let entry = graceful_continue!(entry);
-            let file_type = graceful_continue!(entry.file_type());
-
-            match (
-                file_type.is_file(),
-                file_type.is_dir(),
-                file_type.is_symlink(),
-            ) {
-                (true, _, _) => {
-                    paths.push(Box::new(graceful_continue!(File::from(&entry))));
-                }
-                (_, true, _) => paths.push(Box::new(graceful_continue!(
-                    Directory::from_recursive(&entry, max_depth, current_depth + 1)
-                ))),
-                (_, _, true) => {
-                    paths.push(Box::new(graceful_continue!(Symlink::from(&entry))));
-                }
-                _ => continue,
-            };
+            paths.push(graceful_continue!(EntryType::try_from_recursive(
+                &entry,
+                max_depth,
+                current_depth,
+            )));
         }
 
         Ok(paths)
     }
 }
 
+impl EntryType {
+    pub fn try_from_recursive(
+        entry: &DirEntry,
+        max_depth: usize,
+        current_depth: usize,
+    ) -> io::Result<Self> {
+        let file_type = entry.file_type()?;
+        match (
+            file_type.is_file(),
+            file_type.is_dir(),
+            file_type.is_symlink(),
+        ) {
+            (true, _, _) => Ok(EntryType::File(File::try_from(entry)?)),
+            (_, true, _) => Ok(EntryType::Directory(Directory::try_from_recursive(
+                entry,
+                max_depth,
+                current_depth + 1,
+            )?)),
+            (_, _, true) => Ok(EntryType::File(File::try_from(entry)?)),
+            (_, _, _) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "file type not supported",
+            )),
+        }
+    }
+}
+
 pub trait Entry: std::fmt::Debug {
     fn name(&self) -> &OsStr;
     fn path(&self) -> &OsStr;
-    fn from(entry: &DirEntry) -> io::Result<Self>
+    fn try_from(entry: &DirEntry) -> io::Result<Self>
     where
         Self: Sized;
 }
