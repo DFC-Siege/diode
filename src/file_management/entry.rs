@@ -6,21 +6,24 @@ use std::{
 };
 
 macro_rules! graceful_return {
-    ($expr:expr) => {
-        match $expr {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("Warning: {}", e);
-                return Ok(());
-            }
-        }
-    };
     ($expr:expr, $ret:expr) => {
         match $expr {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Warning: {}", e);
                 return $ret;
+            }
+        }
+    };
+}
+
+macro_rules! graceful_continue {
+    ($expr:expr) => {
+        match $expr {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Warning: {}", e);
+                continue;
             }
         }
     };
@@ -123,8 +126,8 @@ impl Directory {
         let read_dir = graceful_return!(fs::read_dir(path), Ok(paths));
 
         for entry in read_dir {
-            let entry = graceful_return!(entry, Ok(paths));
-            let file_type = graceful_return!(entry.file_type(), Ok(paths));
+            let entry = graceful_continue!(entry);
+            let file_type = graceful_continue!(entry.file_type());
 
             match (
                 file_type.is_file(),
@@ -132,14 +135,13 @@ impl Directory {
                 file_type.is_symlink(),
             ) {
                 (true, _, _) => {
-                    paths.push(Box::new(graceful_return!(File::from(&entry), Ok(paths))));
+                    paths.push(Box::new(graceful_continue!(File::from(&entry))));
                 }
-                (_, true, _) => paths.push(Box::new(graceful_return!(
-                    Directory::from_recursive(&entry, max_depth, current_depth + 1),
-                    Ok(paths)
+                (_, true, _) => paths.push(Box::new(graceful_continue!(
+                    Directory::from_recursive(&entry, max_depth, current_depth + 1)
                 ))),
                 (_, _, true) => {
-                    paths.push(Box::new(graceful_return!(Symlink::from(&entry), Ok(paths))));
+                    paths.push(Box::new(graceful_continue!(Symlink::from(&entry))));
                 }
                 _ => continue,
             };
