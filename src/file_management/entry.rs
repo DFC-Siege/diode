@@ -5,44 +5,22 @@ use std::{
     path::{Path, PathBuf},
 };
 
-macro_rules! define_entries {
-    ($($name:ident {$($extra:tt)*})*) => {
-        #[derive(Debug)]
-        pub enum EntryType {
-            $($name($name),)*
-        }
-
-        $(
-        #[derive(Debug)]
-        pub struct $name {
-            path: PathBuf,
-            name: OsString,
-            $($extra)*
-        }
-
-        impl Entry for $name {
-            fn name(&self) -> &OsStr {
-                self.name.as_os_str()
-            }
-            fn path(&self) -> &OsStr {
-                self.path.as_os_str()
-            }
-
-            fn try_from(entry: &DirEntry) -> io::Result<$name> {
-                $name::try_from(entry)
-            }
-        }
-    )*
-    };
-}
-
-define_entries! {
-    File{metadata: Metadata}
-    Directory {metadata: Metadata, entries: Vec<EntryType>}
-    Symlink {metadata: Metadata, target: PathBuf}
+#[derive(Debug)]
+pub struct File {
+    name: OsString,
+    path: PathBuf,
+    metadata: Metadata,
 }
 
 impl File {
+    pub fn name(&self) -> &OsStr {
+        &self.name
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
     pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
@@ -52,18 +30,23 @@ impl File {
     }
 }
 
-impl Symlink {
-    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
-        Ok(Self {
-            name: entry.file_name(),
-            path: entry.path(),
-            metadata: entry.metadata()?,
-            target: fs::read_link(entry.path())?,
-        })
-    }
+#[derive(Debug)]
+pub struct Directory {
+    name: OsString,
+    path: PathBuf,
+    metadata: Metadata,
+    entries: Vec<EntryType>,
 }
 
 impl Directory {
+    pub fn name(&self) -> &OsStr {
+        &self.name
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
     pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
@@ -106,7 +89,57 @@ impl Directory {
     }
 }
 
+#[derive(Debug)]
+pub struct Symlink {
+    name: OsString,
+    path: PathBuf,
+    metadata: Metadata,
+    target: PathBuf,
+}
+
+impl Symlink {
+    pub fn name(&self) -> &OsStr {
+        &self.name
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        &self.path
+    }
+
+    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
+        Ok(Self {
+            name: entry.file_name(),
+            path: entry.path(),
+            metadata: entry.metadata()?,
+            target: fs::read_link(entry.path())?,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub enum EntryType {
+    File(File),
+    Directory(Directory),
+    Symlink(Symlink),
+}
+
 impl EntryType {
+    pub fn name(&self) -> &OsStr {
+        match self {
+            EntryType::File(v) => v.name(),
+            EntryType::Directory(v) => v.name(),
+            EntryType::Symlink(v) => v.name(),
+        }
+    }
+
+    pub fn path(&self) -> &PathBuf {
+        match self {
+            EntryType::File(v) => v.path(),
+            EntryType::Directory(v) => v.path(),
+            EntryType::Symlink(v) => v.path(),
+        }
+    }
+
     pub fn try_from_recursive(
         entry: &DirEntry,
         max_depth: usize,
@@ -131,12 +164,4 @@ impl EntryType {
             )),
         }
     }
-}
-
-pub trait Entry: std::fmt::Debug {
-    fn name(&self) -> &OsStr;
-    fn path(&self) -> &OsStr;
-    fn try_from(entry: &DirEntry) -> io::Result<Self>
-    where
-        Self: Sized;
 }
