@@ -3,23 +3,28 @@ use crossterm::event::{Event, EventStream, KeyCode, KeyEvent, KeyEventKind, KeyM
 use futures::{FutureExt, StreamExt};
 use ratatui::DefaultTerminal;
 
-use crate::ui::app::draw;
+use crate::{state::file_state::FileState, ui::app::draw};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
     running: bool,
     event_stream: EventStream,
+    file_state: FileState,
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(file_state: FileState) -> Self {
+        Self {
+            running: false,
+            event_stream: EventStream::new(),
+            file_state,
+        }
     }
 
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.running = true;
         while self.running {
-            terminal.draw(draw)?;
+            terminal.draw(|v| draw(v, &self.file_state))?;
             self.handle_crossterm_events().await?;
         }
         Ok(())

@@ -2,7 +2,7 @@ use std::{
     ffi::{OsStr, OsString},
     fs::{self, DirEntry, Metadata},
     io::{self},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[derive(Debug)]
@@ -28,6 +28,34 @@ impl Symlink {
             path: entry.path(),
             metadata: entry.metadata()?,
             target: fs::read_link(entry.path())?,
+        })
+    }
+}
+
+impl TryFrom<&Path> for Symlink {
+    type Error = io::Error;
+
+    fn try_from(path: &Path) -> io::Result<Self> {
+        let metadata = fs::metadata(path)?;
+        Ok(Self {
+            name: path.file_name().unwrap_or_default().to_owned(),
+            path: path.to_path_buf(),
+            metadata,
+            target: fs::read_link(path)?,
+        })
+    }
+}
+
+impl TryFrom<&PathBuf> for Symlink {
+    type Error = io::Error;
+
+    fn try_from(path: &PathBuf) -> io::Result<Self> {
+        let metadata = fs::metadata(path)?;
+        Ok(Self {
+            name: path.file_name().unwrap_or_default().to_owned(),
+            path: path.to_path_buf(),
+            metadata,
+            target: fs::read_link(path)?,
         })
     }
 }

@@ -1,8 +1,8 @@
 use std::{
     ffi::{OsStr, OsString},
-    fs::{DirEntry, Metadata},
+    fs::{self, DirEntry, Metadata},
     io::{self},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[derive(Debug)]
@@ -26,6 +26,32 @@ impl File {
             name: entry.file_name(),
             path: entry.path(),
             metadata: entry.metadata()?,
+        })
+    }
+}
+
+impl TryFrom<&Path> for File {
+    type Error = io::Error;
+
+    fn try_from(path: &Path) -> io::Result<Self> {
+        let metadata = fs::metadata(path)?;
+        Ok(Self {
+            name: path.file_name().unwrap_or_default().to_owned(),
+            path: path.to_path_buf(),
+            metadata,
+        })
+    }
+}
+
+impl TryFrom<&PathBuf> for File {
+    type Error = io::Error;
+
+    fn try_from(path: &PathBuf) -> io::Result<Self> {
+        let metadata = fs::metadata(path)?;
+        Ok(Self {
+            name: path.file_name().unwrap_or_default().to_owned(),
+            path: path.to_path_buf(),
+            metadata,
         })
     }
 }

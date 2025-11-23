@@ -3,11 +3,11 @@ use ratatui::{
     layout::{Constraint, Layout},
 };
 
-use crate::ui::body;
 use crate::ui::footer;
 use crate::ui::header;
+use crate::{state::file_state::FileState, ui::body};
 
-pub fn draw(frame: &mut Frame) {
+pub fn draw(frame: &mut Frame, file_state: &FileState) {
     let chunks = Layout::vertical([
         Constraint::Length(1),
         Constraint::Min(0),
@@ -17,7 +17,7 @@ pub fn draw(frame: &mut Frame) {
 
     frame.render_widget(header::new("diode"), chunks[0]);
 
-    let [layout_left, layout_right] = body::new(chunks[1]);
+    let [layout_left, layout_right] = body::new(chunks[1], file_state);
     frame.render_widget(layout_left.pane, layout_left.rect);
     frame.render_widget(layout_right.pane, layout_right.rect);
 

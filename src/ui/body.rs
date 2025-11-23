@@ -1,23 +1,25 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, Paragraph},
+    widgets::List,
 };
+
+use crate::{file_management::entry::EntryType, state::file_state::FileState};
 
 pub struct LayoutPanePair {
     pub rect: Rect,
-    pub pane: Paragraph<'static>,
+    pub pane: List<'static>,
 }
 
-pub fn new(area: Rect) -> [LayoutPanePair; 2] {
+pub fn new(area: Rect, file_state: &FileState) -> [LayoutPanePair; 2] {
     let rects = create_layout(area);
     [
         LayoutPanePair {
             rect: rects[0],
-            pane: create_pane("Left Pane"),
+            pane: create_pane(file_state.left_dir.entries()),
         },
         LayoutPanePair {
             rect: rects[1],
-            pane: create_pane("Right Pane"),
+            pane: create_pane(file_state.right_dir.entries()),
         },
     ]
 }
@@ -30,8 +32,6 @@ fn create_layout(area: Rect) -> [Rect; 2] {
     [rects[0], rects[1]]
 }
 
-fn create_pane(text: &str) -> Paragraph<'static> {
-    Paragraph::new(text.to_string())
-        .block(Block::default().borders(Borders::ALL))
-        .centered()
+fn create_pane(entries: &[EntryType]) -> List<'static> {
+    todo!()
 }
