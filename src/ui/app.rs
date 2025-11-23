@@ -15,7 +15,7 @@ pub fn draw(frame: &mut Frame) {
     ])
     .split(frame.area());
 
-    frame.render_widget(header::new("duality"), chunks[0]);
+    frame.render_widget(header::new("diode"), chunks[0]);
 
     let [layout_left, layout_right] = body::new(chunks[1]);
     frame.render_widget(layout_left.pane, layout_left.rect);
