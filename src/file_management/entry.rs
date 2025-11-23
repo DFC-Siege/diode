@@ -5,30 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-macro_rules! graceful_return {
-    ($expr:expr, $ret:expr) => {
-        match $expr {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("Warning: {}", e);
-                return $ret;
-            }
-        }
-    };
-}
-
-macro_rules! graceful_continue {
-    ($expr:expr) => {
-        match $expr {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("Warning: {}", e);
-                continue;
-            }
-        }
-    };
-}
-
 macro_rules! define_entries {
     ($($name:ident {$($extra:tt)*})*) => {
         #[derive(Debug)]
@@ -113,23 +89,14 @@ impl Directory {
     }
 
     fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> io::Result<Vec<EntryType>> {
-        let mut paths: Vec<EntryType> = Vec::new();
-
         if current_depth > max_depth {
-            return Ok(paths);
+            return Ok(Vec::new());
         }
 
-        let read_dir = graceful_return!(fs::read_dir(path), Ok(paths));
-        for entry in read_dir {
-            let entry = graceful_continue!(entry);
-            paths.push(graceful_continue!(EntryType::try_from_recursive(
-                &entry,
-                max_depth,
-                current_depth,
-            )));
-        }
-
-        Ok(paths)
+        Ok(fs::read_dir(path)?
+            .filter_map(|v| v.ok())
+            .filter_map(|v| EntryType::try_from_recursive(&v, max_depth, current_depth).ok())
+            .collect())
     }
 }
 
