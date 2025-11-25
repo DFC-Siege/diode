@@ -29,18 +29,34 @@ impl Directory {
         })
     }
 
+    pub fn load_entries(&mut self) -> io::Result<()> {
+        self.entries = Self::load_entries_with_depth(&self.path, 0, 0)?;
+
+        Ok(())
+    }
+
     fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> Vec<Entry> {
         if current_depth > max_depth {
             return Vec::new();
         }
 
-        let Ok(read_dir) = fs::read_dir(path)
-            .inspect_err(|e| eprintln!("Failed to read directory {:?}: {}", path, e))
-        else {
-            return Vec::new();
-        };
+        match Self::load_entries_with_depth(path, max_depth, current_depth) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("{}", e);
+                Vec::new()
+            }
+        }
+    }
 
-        read_dir
+    fn load_entries_with_depth(
+        path: &Path,
+        max_depth: usize,
+        current_depth: usize,
+    ) -> io::Result<Vec<Entry>> {
+        let read_dir = fs::read_dir(path)?;
+
+        Ok(read_dir
             .filter_map(|v| {
                 v.inspect_err(|e| eprintln!("Failed to read dir entry: {}", e))
                     .ok()
@@ -50,7 +66,7 @@ impl Directory {
                     .inspect_err(|e| eprintln!("Failed to process {:?}: {}", v.path(), e))
                     .ok()
             })
-            .collect()
+            .collect())
     }
 }
 
