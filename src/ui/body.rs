@@ -1,7 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::{
-    state::diode::diode_state::DiodeState,
+    state::diode::diode_state::{DiodeState, Selection},
     ui::explorer::explorer_pane::{self, ExplorerPane},
 };
 
@@ -15,11 +15,17 @@ pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair<'_>; 2] {
     [
         LayoutPanePair {
             rect: rects[0],
-            pane: explorer_pane::create_pane(&diode_state.left_state.entries),
+            pane: explorer_pane::create_pane(
+                &diode_state.left_state.entries,
+                diode_state.selected == Selection::Left,
+            ),
         },
         LayoutPanePair {
             rect: rects[1],
-            pane: explorer_pane::create_pane(&diode_state.right_state.entries),
+            pane: explorer_pane::create_pane(
+                &diode_state.right_state.entries,
+                diode_state.selected == Selection::Right,
+            ),
         },
     ]
 }

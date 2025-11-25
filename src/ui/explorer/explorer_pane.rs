@@ -5,18 +5,21 @@ use crate::{
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{List, ListItem, Paragraph, Widget},
+    style::{Color, Style},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
 };
 
 pub struct ExplorerPane<'a> {
     pub list: List<'a>,
     pub info: Paragraph<'a>,
+    pub selected: bool,
 }
 
-pub fn create_pane(entries: &[EntryState]) -> ExplorerPane<'_> {
+pub fn create_pane(entries: &[EntryState], selected: bool) -> ExplorerPane<'_> {
     ExplorerPane {
         list: create_list(entries),
         info: create_info(entries),
+        selected,
     }
 }
 
@@ -47,7 +50,20 @@ fn create_info(entries: &[EntryState]) -> Paragraph<'_> {
 
 impl Widget for ExplorerPane<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let layout = create_layout(area);
+        let border_color = if self.selected {
+            Color::Cyan
+        } else {
+            Color::DarkGray
+        };
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color));
+
+        let inner = block.inner(area);
+        block.render(area, buf);
+
+        let layout = create_layout(inner);
         self.list.render(layout[0], buf);
         self.info.render(layout[1], buf);
     }

@@ -1,15 +1,15 @@
 use color_eyre::Result;
-use crossterm::event::{Event, EventStream, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{Event, EventStream, KeyEventKind};
 use futures::{FutureExt, StreamExt};
 use ratatui::DefaultTerminal;
 
-use crate::{state::diode::diode_state::DiodeState, ui::app::draw};
+use crate::{input_handling::input_handler, state::diode::diode_state::DiodeState, ui::app::draw};
 
 #[derive(Debug)]
 pub struct App {
     running: bool,
     event_stream: EventStream,
-    diode_state: DiodeState,
+    pub diode_state: DiodeState,
 }
 
 impl App {
@@ -34,7 +34,9 @@ impl App {
         let event = self.event_stream.next().fuse().await;
         if let Some(Ok(evt)) = event {
             match evt {
-                Event::Key(key) if key.kind == KeyEventKind::Press => self.on_key_event(key),
+                Event::Key(key) if key.kind == KeyEventKind::Press => {
+                    input_handler::on_key_event(self, key)
+                }
                 Event::Mouse(_) => {}
                 Event::Resize(_, _) => {}
                 _ => {}
@@ -43,15 +45,7 @@ impl App {
         Ok(())
     }
 
-    fn on_key_event(&mut self, key: KeyEvent) {
-        match (key.modifiers, key.code) {
-            (_, KeyCode::Esc | KeyCode::Char('q'))
-            | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
-            _ => {}
-        }
-    }
-
-    fn quit(&mut self) {
+    pub fn quit(&mut self) {
         self.running = false;
     }
 }

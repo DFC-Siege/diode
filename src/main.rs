@@ -2,12 +2,21 @@
 #![allow(dead_code)]
 mod app;
 mod file_management;
+mod input_handling;
 mod state;
 mod ui;
 
 use crate::{file_management::directory::Directory, state::diode::diode_state::DiodeState};
 use app::App;
 use std::env;
+
+fn test_result() -> Result<String, String> {
+    if true {
+        Ok("success".to_owned())
+    } else {
+        Err("If statement failed".to_owned())
+    }
+}
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
