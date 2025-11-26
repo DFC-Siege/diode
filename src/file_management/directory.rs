@@ -49,8 +49,8 @@ impl Directory {
             }
         }
 
-        let dir_mut = Rc::try_unwrap(dir_rc)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "failed to unwrap Rc"))?;
+        let dir_mut =
+            Rc::try_unwrap(dir_rc).map_err(|_| io::Error::other("failed to unwrap Rc"))?;
 
         Ok(Self { entries, ..dir_mut })
     }
