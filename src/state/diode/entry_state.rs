@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use crate::{
     file_management::entry::Entry,
@@ -29,6 +29,10 @@ impl EntryState {
             EntryState::File(f) => f.selected,
             EntryState::Symlink(s) => s.selected,
         }
+    }
+
+    pub fn move_down(&self) -> Option<Weak<EntryState>> {
+        todo!()
     }
 }
 

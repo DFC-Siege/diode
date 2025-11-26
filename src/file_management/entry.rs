@@ -3,7 +3,7 @@ use std::{
     fs::{DirEntry, Metadata},
     io::{self},
     path::PathBuf,
-    rc::{Rc, Weak},
+    rc::Weak,
 };
 
 use crate::file_management::{directory::Directory, file::File, symlink::Symlink};
@@ -29,14 +29,6 @@ impl Entry {
             Entry::File(v) => &v.path,
             Entry::Directory(v) => &v.path,
             Entry::Symlink(v) => &v.path,
-        }
-    }
-
-    pub fn parent(&self) -> Option<Rc<Entry>> {
-        match self {
-            Entry::File(f) => f.parent.upgrade(),
-            Entry::Directory(d) => d.parent.upgrade(),
-            Entry::Symlink(s) => s.parent.upgrade(),
         }
     }
 
