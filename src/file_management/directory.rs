@@ -3,6 +3,7 @@ use std::{
     fs::{self, DirEntry, Metadata},
     io::{self},
     path::{Path, PathBuf},
+    rc::{Rc, Weak},
 };
 
 use crate::file_management::entry::Entry;
@@ -12,61 +13,49 @@ pub struct Directory {
     pub name: OsString,
     pub path: PathBuf,
     pub metadata: Metadata,
-    pub entries: Vec<Entry>,
+    pub parent: Weak<Entry>,
+    pub entries: Vec<Rc<Entry>>,
 }
 
 impl Directory {
     pub fn try_from_recursive(
         entry: &DirEntry,
+        parent: Weak<Entry>,
         max_depth: usize,
         current_depth: usize,
     ) -> io::Result<Self> {
-        Ok(Self {
+        let dir = Self {
             name: entry.file_name(),
             path: entry.path(),
             metadata: entry.metadata()?,
-            entries: Self::recurse(&entry.path(), max_depth, current_depth),
-        })
-    }
+            parent,
+            entries: Vec::new(),
+        };
 
-    pub fn load_entries(&mut self) -> io::Result<()> {
-        self.entries = Self::load_entries_with_depth(&self.path, 0, 0)?;
-
-        Ok(())
-    }
-
-    fn recurse(path: &Path, max_depth: usize, current_depth: usize) -> Vec<Entry> {
-        if current_depth > max_depth {
-            return Vec::new();
+        if current_depth >= max_depth {
+            return Ok(dir);
         }
 
-        match Self::load_entries_with_depth(path, max_depth, current_depth) {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("{}", e);
-                Vec::new()
+        let dir_rc = Rc::new(Entry::Directory(dir));
+        let weak_self = Rc::downgrade(&dir_rc);
+
+        let mut entries = Vec::new();
+        for entry_result in fs::read_dir(entry.path())? {
+            let entry = entry_result?;
+            match Entry::try_from_recursive(&entry, weak_self.clone(), max_depth, current_depth) {
+                Ok(child_entry) => entries.push(Rc::new(child_entry)),
+                Err(e) if e.kind() == io::ErrorKind::PermissionDenied => continue,
+                Err(e) => return Err(e),
             }
         }
-    }
 
-    fn load_entries_with_depth(
-        path: &Path,
-        max_depth: usize,
-        current_depth: usize,
-    ) -> io::Result<Vec<Entry>> {
-        let read_dir = fs::read_dir(path)?;
-
-        Ok(read_dir
-            .filter_map(|v| {
-                v.inspect_err(|e| eprintln!("Failed to read dir entry: {}", e))
-                    .ok()
-            })
-            .filter_map(|v| {
-                Entry::try_from_recursive(&v, max_depth, current_depth)
-                    .inspect_err(|e| eprintln!("Failed to process {:?}: {}", v.path(), e))
-                    .ok()
-            })
-            .collect())
+        if let Entry::Directory(dir_mut) =
+            Rc::try_unwrap(dir_rc).map_err(|_| io::Error::other("failed to unwrap Rc"))?
+        {
+            Ok(Self { entries, ..dir_mut })
+        } else {
+            unreachable!()
+        }
     }
 }
 
@@ -79,7 +68,8 @@ impl TryFrom<&Path> for Directory {
             name: path.file_name().unwrap_or_default().to_owned(),
             path: path.to_path_buf(),
             metadata,
-            entries: Self::recurse(path, 0, 0),
+            parent: Weak::new(),
+            entries: Vec::new(),
         })
     }
 }
@@ -93,7 +83,8 @@ impl TryFrom<&PathBuf> for Directory {
             name: path.file_name().unwrap_or_default().to_owned(),
             path: path.to_path_buf(),
             metadata,
-            entries: Self::recurse(path, 0, 0),
+            parent: Weak::new(),
+            entries: Vec::new(),
         })
     }
 }

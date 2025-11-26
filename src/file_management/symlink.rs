@@ -3,7 +3,10 @@ use std::{
     fs::{self, DirEntry, Metadata},
     io::{self},
     path::{Path, PathBuf},
+    rc::Weak,
 };
+
+use crate::file_management::entry::Entry;
 
 #[derive(Debug)]
 pub struct Symlink {
@@ -11,15 +14,17 @@ pub struct Symlink {
     pub path: PathBuf,
     pub metadata: Metadata,
     pub target: PathBuf,
+    pub parent: Weak<Entry>,
 }
 
 impl Symlink {
-    pub fn try_from(entry: &DirEntry) -> io::Result<Self> {
+    pub fn try_from(entry: &DirEntry, parent: Weak<Entry>) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
             path: entry.path(),
             metadata: entry.metadata()?,
             target: fs::read_link(entry.path())?,
+            parent,
         })
     }
 }
@@ -34,6 +39,7 @@ impl TryFrom<&Path> for Symlink {
             path: path.to_path_buf(),
             metadata,
             target: fs::read_link(path)?,
+            parent: Weak::new(),
         })
     }
 }
@@ -48,6 +54,7 @@ impl TryFrom<&PathBuf> for Symlink {
             path: path.to_path_buf(),
             metadata,
             target: fs::read_link(path)?,
+            parent: Weak::new(),
         })
     }
 }

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     file_management::entry::Entry,
     state::diode::{
@@ -33,6 +35,16 @@ impl EntryState {
 impl From<Entry> for EntryState {
     fn from(entry: Entry) -> Self {
         match entry {
+            Entry::Directory(d) => EntryState::Directory(d.into()),
+            Entry::File(f) => EntryState::File(f.into()),
+            Entry::Symlink(s) => EntryState::Symlink(s.into()),
+        }
+    }
+}
+
+impl From<Rc<Entry>> for EntryState {
+    fn from(entry: Rc<Entry>) -> Self {
+        match Rc::try_unwrap(entry).expect("Entry has multiple strong references") {
             Entry::Directory(d) => EntryState::Directory(d.into()),
             Entry::File(f) => EntryState::File(f.into()),
             Entry::Symlink(s) => EntryState::Symlink(s.into()),
