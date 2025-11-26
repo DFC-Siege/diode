@@ -6,7 +6,7 @@ use std::{
     rc::Weak,
 };
 
-use crate::file_management::entry::Entry;
+use crate::file_management::directory::Directory;
 
 #[derive(Debug)]
 pub struct Symlink {
@@ -14,11 +14,11 @@ pub struct Symlink {
     pub path: PathBuf,
     pub metadata: Metadata,
     pub target: PathBuf,
-    pub parent: Weak<Entry>,
+    pub parent: Weak<Directory>,
 }
 
 impl Symlink {
-    pub fn try_from(entry: &DirEntry, parent: Weak<Entry>) -> io::Result<Self> {
+    pub fn try_from(entry: &DirEntry, parent: Weak<Directory>) -> io::Result<Self> {
         Ok(Self {
             name: entry.file_name(),
             path: entry.path(),

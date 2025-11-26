@@ -17,22 +17,30 @@ pub enum EntryState {
 impl EntryState {
     pub fn set_selected(&mut self, value: bool) {
         match self {
-            EntryState::Directory(d) => d.selected = value,
-            EntryState::File(f) => f.selected = value,
-            EntryState::Symlink(s) => s.selected = value,
+            EntryState::Directory(v) => v.selected = value,
+            EntryState::File(v) => v.selected = value,
+            EntryState::Symlink(v) => v.selected = value,
         }
     }
 
     pub fn is_selected(&self) -> bool {
         match self {
-            EntryState::Directory(d) => d.selected,
-            EntryState::File(f) => f.selected,
-            EntryState::Symlink(s) => s.selected,
+            EntryState::Directory(v) => v.selected,
+            EntryState::File(v) => v.selected,
+            EntryState::Symlink(v) => v.selected,
         }
     }
 
     pub fn move_down(&self) -> Option<Weak<EntryState>> {
-        todo!()
+        if let Some(parent) = match self {
+            EntryState::Directory(v) => v.parent.upgrade(),
+            EntryState::File(v) => v.parent.upgrade(),
+            EntryState::Symlink(v) => v.parent.upgrade(),
+        } {
+            parent.move_down(self)
+        } else {
+            None
+        }
     }
 }
 

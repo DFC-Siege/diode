@@ -64,7 +64,7 @@ impl Entry {
 
     pub fn try_from_recursive(
         entry: &DirEntry,
-        parent: Weak<Entry>,
+        parent: Weak<Directory>,
         max_depth: usize,
         current_depth: usize,
     ) -> io::Result<Self> {

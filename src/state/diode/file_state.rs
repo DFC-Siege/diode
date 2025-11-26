@@ -1,6 +1,11 @@
-use std::{ffi::OsString, fs::Metadata, path::PathBuf};
+use std::{
+    ffi::OsString,
+    fs::Metadata,
+    path::PathBuf,
+    rc::{Rc, Weak},
+};
 
-use crate::file_management::file::File;
+use crate::{file_management::file::File, state::diode::directory_state::DirectoryState};
 
 #[derive(Debug)]
 pub struct FileState {
@@ -8,15 +13,22 @@ pub struct FileState {
     pub path: PathBuf,
     pub metadata: Metadata,
     pub selected: bool,
+    pub parent: Weak<DirectoryState>,
 }
 
 impl From<File> for FileState {
     fn from(file: File) -> Self {
+        let parent: Weak<DirectoryState> = match file.parent.upgrade() {
+            Some(v) => Rc::downgrade(&Rc::new(DirectoryState::from(v))),
+            None => Weak::new(),
+        };
+
         Self {
             name: file.name,
             path: file.path,
             metadata: file.metadata,
             selected: false,
+            parent,
         }
     }
 }
