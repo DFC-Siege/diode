@@ -1,63 +1,35 @@
-use std::{
-    cell::Cell,
-    ffi::OsString,
-    fs::Metadata,
-    path::{Path, PathBuf},
-    rc::{Rc, Weak},
-};
+use std::io;
 
 use crate::{file_management::directory::Directory, state::diode::entry_state::EntryState};
 
 #[derive(Debug)]
 pub struct DirectoryState {
-    pub name: OsString,
-    pub path: PathBuf,
-    pub metadata: Metadata,
-    pub entries: Vec<Rc<EntryState>>,
+    pub directory: Directory,
     pub collapsed: bool,
-    pub selected: Cell<bool>,
-    pub parent: Weak<DirectoryState>,
+    pub selected: bool,
 }
 
 impl DirectoryState {
-    pub fn move_down(&self, path: &Path) -> Option<Weak<EntryState>> {
-        let index = self.entries.iter().position(|e| e.path() == path)?;
-        if let Some(entry) = self.entries.get(index + 1) {
-            Some(Rc::downgrade(entry))
-        } else if let Some(parent) = self.parent.upgrade() {
-            parent.move_down(&self.path)
-        } else {
-            None
+    pub fn new(directory: Directory) -> Self {
+        Self {
+            directory,
+            collapsed: false,
+            selected: false,
         }
+    }
+
+    pub fn load_entry_states(&self) -> io::Result<Vec<EntryState>> {
+        Ok(self
+            .directory
+            .load_entries()?
+            .into_iter()
+            .map(|v| v.into())
+            .collect())
     }
 }
 
 impl From<Directory> for DirectoryState {
     fn from(directory: Directory) -> Self {
-        let parent: Weak<DirectoryState> = match directory.parent.upgrade() {
-            Some(v) => Rc::downgrade(&Rc::new(DirectoryState::from(v))),
-            None => Weak::new(),
-        };
-        Self {
-            name: directory.name,
-            path: directory.path,
-            metadata: directory.metadata,
-            entries: directory
-                .entries
-                .into_iter()
-                .map(|v| Rc::new(v.into()))
-                .collect(),
-            collapsed: true,
-            selected: Cell::new(false),
-            parent,
-        }
-    }
-}
-
-impl From<Rc<Directory>> for DirectoryState {
-    fn from(entry: Rc<Directory>) -> Self {
-        Rc::try_unwrap(entry)
-            .expect("Directory has multiple strong references")
-            .into()
+        DirectoryState::new(directory)
     }
 }
