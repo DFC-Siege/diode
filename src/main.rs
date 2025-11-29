@@ -10,14 +10,6 @@ use crate::{file_management::directory::Directory, state::diode::diode_state::Di
 use app::App;
 use std::env;
 
-fn test_result() -> Result<String, String> {
-    if true {
-        Ok("success".to_owned())
-    } else {
-        Err("If statement failed".to_owned())
-    }
-}
-
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{iter::once, rc::Rc};
 
 use crate::{
     state::diode::entry_state::EntryState,
@@ -36,10 +36,10 @@ fn create_layout(area: Rect) -> [Rect; 2] {
 fn create_list(entries: &[Rc<EntryState>]) -> List<'_> {
     let items: Vec<ListItem> = entries
         .iter()
-        .map(|v| match v.as_ref() {
-            EntryState::Directory(dir) => directory::create_list_item(dir),
-            EntryState::File(file) => file::create_list_item(file),
-            EntryState::Symlink(symlink) => symlink::create_list_item(symlink),
+        .flat_map(|v| match v.as_ref() {
+            EntryState::Directory(dir) => directory::create_list_item(dir, 0),
+            EntryState::File(file) => once(file::create_list_item(file, 0)).collect(),
+            EntryState::Symlink(symlink) => once(symlink::create_list_item(symlink, 0)).collect(),
         })
         .collect();
     List::new(items)

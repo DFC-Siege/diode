@@ -80,7 +80,7 @@ impl TryFrom<&Path> for Directory {
 
         for entry_result in fs::read_dir(path)? {
             let entry = entry_result?;
-            match Entry::try_from_recursive(&entry, weak_self.clone(), usize::MAX, 0) {
+            match Entry::try_from_recursive(&entry, weak_self.clone(), 0, 0) {
                 Ok(child_entry) => dir.entries.push(Rc::new(child_entry)),
                 Err(e) if e.kind() == io::ErrorKind::PermissionDenied => continue,
                 Err(e) => return Err(e),
