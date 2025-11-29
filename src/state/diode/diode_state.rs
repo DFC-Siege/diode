@@ -37,10 +37,9 @@ impl DiodeState {
     }
 
     pub fn move_up(&mut self) {
-        todo!()
-        // match self.selected {
-        //     Selection::Left => self.left_state.move_up(),
-        //     Selection::Right => self.right_state.move_up(),
-        // }
+        match self.selected {
+            Selection::Left => self.left_state.move_up(),
+            Selection::Right => self.right_state.move_up(),
+        };
     }
 }

@@ -18,6 +18,13 @@ impl EntryState {
             EntryState::File(v) => &v.file.path,
         }
     }
+
+    pub fn set_selected(&mut self, value: bool) {
+        match self {
+            EntryState::Directory(v) => v.selected = value,
+            EntryState::File(v) => v.selected = value,
+        }
+    }
 }
 
 impl PartialEq for EntryState {

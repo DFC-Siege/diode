@@ -1,11 +1,12 @@
-use futures::io;
-
-use crate::state::diode::{directory_state::DirectoryState, entry_state::EntryState};
 use std::{
     collections::BTreeMap,
     ops::Bound,
     path::{Path, PathBuf},
 };
+
+use futures::io;
+
+use crate::state::diode::{directory_state::DirectoryState, entry_state::EntryState};
 
 #[derive(Debug)]
 pub struct ExplorerState {
@@ -29,25 +30,48 @@ impl ExplorerState {
         })
     }
 
+    fn navigate_to(&mut self, new_path: Option<PathBuf>) {
+        if let Some(current) = &self.selected
+            && let Some(entry) = self.entries.get_mut(current)
+        {
+            entry.set_selected(false);
+        }
+
+        if let Some(ref path) = new_path
+            && let Some(entry) = self.entries.get_mut(path)
+        {
+            entry.set_selected(true);
+        }
+
+        self.selected = new_path;
+    }
+
     pub fn move_down(&mut self) {
-        if let Some(selected) = &self.selected {
-            self.selected = self
-                .entries
+        let next = if let Some(selected) = &self.selected {
+            self.entries
                 .range::<Path, _>((Bound::Excluded(selected.as_path()), Bound::Unbounded))
                 .next()
-                .map(|(k, _)| k.clone());
+                .map(|(k, _)| k.clone())
         } else {
-            self.selected = self.entries.keys().next().cloned();
+            self.entries.keys().next().cloned()
+        };
+
+        if next.is_some() {
+            self.navigate_to(next);
         }
     }
 
     pub fn move_up(&mut self) {
         if let Some(selected) = &self.selected {
-            self.selected = self
+            let prev = self
                 .entries
                 .range::<Path, _>((Bound::Unbounded, Bound::Excluded(selected.as_path())))
                 .next_back()
                 .map(|(k, _)| k.clone());
+
+            if prev.is_some() {
+                self.navigate_to(prev);
+            }
         }
     }
 }
