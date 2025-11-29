@@ -2,12 +2,20 @@ use std::rc::{Rc, Weak};
 
 use crate::state::diode::{directory_state::DirectoryState, entry_state::EntryState};
 
-struct ExplorerState {
+#[derive(Debug)]
+pub struct ExplorerState {
     pub root: DirectoryState,
     pub selected_entry: Weak<EntryState>,
 }
 
 impl ExplorerState {
+    pub fn new(root: DirectoryState) -> Self {
+        Self {
+            root,
+            selected_entry: Weak::new(),
+        }
+    }
+
     pub fn move_down(&mut self) {
         match self.selected_entry.upgrade() {
             Some(v) => {
@@ -20,6 +28,10 @@ impl ExplorerState {
                     self.selected_entry = Rc::downgrade(first_entry);
                 }
             }
+        };
+
+        if let Some(entry) = self.selected_entry.upgrade() {
+            entry.set_selected(true);
         }
     }
 }

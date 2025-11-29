@@ -1,9 +1,9 @@
-use crate::state::diode::directory_state::DirectoryState;
+use crate::state::diode::explorer_state::ExplorerState;
 
 #[derive(Debug)]
 pub struct DiodeState {
-    pub left_state: DirectoryState,
-    pub right_state: DirectoryState,
+    pub left_state: ExplorerState,
+    pub right_state: ExplorerState,
     pub selected: Selection,
 }
 
@@ -14,7 +14,7 @@ pub enum Selection {
 }
 
 impl DiodeState {
-    pub fn new(left_state: DirectoryState, right_state: DirectoryState) -> Self {
+    pub fn new(left_state: ExplorerState, right_state: ExplorerState) -> Self {
         Self {
             left_state,
             right_state,
@@ -30,11 +30,10 @@ impl DiodeState {
     }
 
     pub fn move_down(&mut self) {
-        todo!()
-        // match self.selected {
-        //     Selection::Left => self.left_state.move_down(),
-        //     Selection::Right => self.right_state.move_down(),
-        // }
+        match self.selected {
+            Selection::Left => self.left_state.move_down(),
+            Selection::Right => self.right_state.move_down(),
+        };
     }
 
     pub fn move_up(&mut self) {

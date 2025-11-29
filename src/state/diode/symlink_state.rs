@@ -1,4 +1,5 @@
 use std::{
+    cell::Cell,
     ffi::OsString,
     fs::Metadata,
     path::PathBuf,
@@ -14,7 +15,7 @@ pub struct SymlinkState {
     pub metadata: Metadata,
     pub target: PathBuf,
     pub collapsed: bool,
-    pub selected: bool,
+    pub selected: Cell<bool>,
     pub parent: Weak<DirectoryState>,
 }
 
@@ -31,7 +32,7 @@ impl From<Symlink> for SymlinkState {
             metadata: symlink.metadata,
             target: symlink.target,
             collapsed: false,
-            selected: false,
+            selected: Cell::new(false),
             parent,
         }
     }

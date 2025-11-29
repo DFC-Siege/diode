@@ -6,7 +6,10 @@ mod input_handling;
 mod state;
 mod ui;
 
-use crate::{file_management::directory::Directory, state::diode::diode_state::DiodeState};
+use crate::{
+    file_management::directory::Directory,
+    state::diode::{diode_state::DiodeState, explorer_state::ExplorerState},
+};
 use app::App;
 use std::env;
 
@@ -14,10 +17,10 @@ use std::env;
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let current_dir = env::current_dir()?;
-    let left_dir = Directory::try_from(&current_dir)?;
-    let right_dir = Directory::try_from(&current_dir)?;
+    let left_explorer = ExplorerState::new(Directory::try_from(&current_dir)?.into());
+    let right_explorer = ExplorerState::new(Directory::try_from(&current_dir)?.into());
     let terminal = ratatui::init();
-    let diode_state = DiodeState::new(left_dir.into(), right_dir.into());
+    let diode_state = DiodeState::new(left_explorer, right_explorer);
     let result = App::new(diode_state).run(terminal).await;
     ratatui::restore();
     result

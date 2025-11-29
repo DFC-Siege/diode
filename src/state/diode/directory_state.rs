@@ -1,4 +1,5 @@
 use std::{
+    cell::Cell,
     ffi::OsString,
     fs::Metadata,
     path::{Path, PathBuf},
@@ -14,7 +15,7 @@ pub struct DirectoryState {
     pub metadata: Metadata,
     pub entries: Vec<Rc<EntryState>>,
     pub collapsed: bool,
-    pub selected: bool,
+    pub selected: Cell<bool>,
     pub parent: Weak<DirectoryState>,
 }
 
@@ -47,7 +48,7 @@ impl From<Directory> for DirectoryState {
                 .map(|v| Rc::new(v.into()))
                 .collect(),
             collapsed: true,
-            selected: false,
+            selected: Cell::new(false),
             parent,
         }
     }

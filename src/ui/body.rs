@@ -16,14 +16,14 @@ pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair<'_>; 2] {
         LayoutPanePair {
             rect: rects[0],
             pane: explorer_pane::create_pane(
-                &diode_state.left_state.entries,
+                &diode_state.left_state.root.entries,
                 diode_state.selected == Selection::Left,
             ),
         },
         LayoutPanePair {
             rect: rects[1],
             pane: explorer_pane::create_pane(
-                &diode_state.right_state.entries,
+                &diode_state.right_state.root.entries,
                 diode_state.selected == Selection::Right,
             ),
         },

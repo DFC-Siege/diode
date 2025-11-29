@@ -1,4 +1,5 @@
 use std::{
+    cell::Cell,
     ffi::OsString,
     fs::Metadata,
     path::PathBuf,
@@ -12,7 +13,7 @@ pub struct FileState {
     pub name: OsString,
     pub path: PathBuf,
     pub metadata: Metadata,
-    pub selected: bool,
+    pub selected: Cell<bool>,
     pub parent: Weak<DirectoryState>,
 }
 
@@ -27,7 +28,7 @@ impl From<File> for FileState {
             name: file.name,
             path: file.path,
             metadata: file.metadata,
-            selected: false,
+            selected: Cell::new(false),
             parent,
         }
     }

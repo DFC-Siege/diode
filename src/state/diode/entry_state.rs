@@ -18,11 +18,11 @@ pub enum EntryState {
 }
 
 impl EntryState {
-    pub fn set_selected(&mut self, value: bool) {
+    pub fn set_selected(&self, value: bool) {
         match self {
-            EntryState::Directory(v) => v.selected = value,
-            EntryState::File(v) => v.selected = value,
-            EntryState::Symlink(v) => v.selected = value,
+            EntryState::Directory(v) => v.selected.set(value),
+            EntryState::File(v) => v.selected.set(value),
+            EntryState::Symlink(v) => v.selected.set(value),
         }
     }
 
@@ -36,9 +36,9 @@ impl EntryState {
 
     pub fn is_selected(&self) -> bool {
         match self {
-            EntryState::Directory(v) => v.selected,
-            EntryState::File(v) => v.selected,
-            EntryState::Symlink(v) => v.selected,
+            EntryState::Directory(v) => v.selected.get(),
+            EntryState::File(v) => v.selected.get(),
+            EntryState::Symlink(v) => v.selected.get(),
         }
     }
 
