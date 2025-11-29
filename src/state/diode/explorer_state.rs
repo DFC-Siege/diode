@@ -1,5 +1,6 @@
 use std::{
     collections::BTreeMap,
+    io::ErrorKind,
     ops::Bound,
     path::{Path, PathBuf},
 };
@@ -28,6 +29,35 @@ impl ExplorerState {
             entries,
             selected: None,
         })
+    }
+
+    pub fn load_dir(&mut self) -> io::Result<()> {
+        if let Some(selected) = &self.selected
+            && let Some(entry) = self.entries.get(selected)
+        {
+            match entry {
+                EntryState::Directory(v) => {
+                    let entries: BTreeMap<PathBuf, EntryState> = v
+                        .load_entry_states()?
+                        .into_iter()
+                        .map(|v| (v.path().to_owned(), v))
+                        .collect();
+
+                    self.entries.extend(entries);
+                    return Ok(());
+                }
+                EntryState::File(_) => {
+                    return Err(io::Error::new(
+                        ErrorKind::NotADirectory,
+                        "Can't load from a file",
+                    ));
+                }
+            }
+        }
+        Err(io::Error::new(
+            ErrorKind::NotADirectory,
+            "No valid entry selected",
+        ))
     }
 
     fn navigate_to(&mut self, new_path: Option<PathBuf>) {

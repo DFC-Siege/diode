@@ -1,3 +1,5 @@
+use futures::io;
+
 use crate::state::diode::explorer_state::ExplorerState;
 
 #[derive(Debug)]
@@ -41,5 +43,12 @@ impl DiodeState {
             Selection::Left => self.left_state.move_up(),
             Selection::Right => self.right_state.move_up(),
         };
+    }
+
+    pub fn load_dir(&mut self) -> io::Result<()> {
+        match self.selected {
+            Selection::Left => self.left_state.load_dir(),
+            Selection::Right => self.right_state.load_dir(),
+        }
     }
 }
