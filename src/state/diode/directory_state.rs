@@ -1,7 +1,7 @@
 use std::{
     ffi::OsString,
     fs::Metadata,
-    path::PathBuf,
+    path::{Path, PathBuf},
     rc::{Rc, Weak},
 };
 
@@ -19,8 +19,15 @@ pub struct DirectoryState {
 }
 
 impl DirectoryState {
-    pub fn move_down(&self, entry: &EntryState) -> Option<Weak<EntryState>> {
-        todo!()
+    pub fn move_down(&self, path: &Path) -> Option<Weak<EntryState>> {
+        let index = self.entries.iter().position(|e| e.path() == path)?;
+        if let Some(entry) = self.entries.get(index + 1) {
+            Some(Rc::downgrade(entry))
+        } else if let Some(parent) = self.parent.upgrade() {
+            parent.move_down(&self.path)
+        } else {
+            None
+        }
     }
 }
 

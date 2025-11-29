@@ -1,4 +1,7 @@
-use std::rc::{Rc, Weak};
+use std::{
+    path::Path,
+    rc::{Rc, Weak},
+};
 
 use crate::{
     file_management::entry::Entry,
@@ -23,6 +26,14 @@ impl EntryState {
         }
     }
 
+    pub fn path(&self) -> &Path {
+        match self {
+            EntryState::Directory(v) => &v.path,
+            EntryState::File(v) => &v.path,
+            EntryState::Symlink(v) => &v.path,
+        }
+    }
+
     pub fn is_selected(&self) -> bool {
         match self {
             EntryState::Directory(v) => v.selected,
@@ -37,7 +48,7 @@ impl EntryState {
             EntryState::File(v) => v.parent.upgrade(),
             EntryState::Symlink(v) => v.parent.upgrade(),
         } {
-            parent.move_down(self)
+            parent.move_down(self.path())
         } else {
             None
         }
