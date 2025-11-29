@@ -16,7 +16,9 @@ pub struct Directory {
 
 impl Directory {
     pub fn load_entries(&self) -> io::Result<Vec<Entry>> {
-        todo!()
+        fs::read_dir(&self.path)?
+            .map(|e| e.and_then(Entry::try_from))
+            .collect()
     }
 }
 
