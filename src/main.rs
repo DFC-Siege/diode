@@ -18,6 +18,7 @@ async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
     let current_dir = env::current_dir()?;
     let left_explorer = ExplorerState::new(Directory::try_from(&current_dir)?.into());
+    println!("{:#?}", left_explorer);
     let right_explorer = ExplorerState::new(Directory::try_from(&current_dir)?.into());
     let terminal = ratatui::init();
     let diode_state = DiodeState::new(left_explorer, right_explorer);
