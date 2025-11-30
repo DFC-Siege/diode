@@ -1,5 +1,3 @@
-use futures::io;
-
 use crate::state::diode::explorer_state::ExplorerState;
 
 #[derive(Debug)]
@@ -45,10 +43,14 @@ impl DiodeState {
         };
     }
 
-    pub fn load_dir(&mut self) -> io::Result<()> {
-        match self.selected {
-            Selection::Left => self.left_state.load_dir(),
-            Selection::Right => self.right_state.load_dir(),
+    pub fn toggle_dir(&mut self) {
+        if let Err(e) = match self.selected {
+            Selection::Left => self.left_state.toggle_dir(),
+            Selection::Right => self.right_state.toggle_dir(),
+        } {
+            // TODO: Should this be handled differently?
+            // Maybe a popup or notification?
+            eprint!("{}", e);
         }
     }
 }

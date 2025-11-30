@@ -31,33 +31,65 @@ impl ExplorerState {
         })
     }
 
-    pub fn load_dir(&mut self) -> io::Result<()> {
-        if let Some(selected) = &self.selected
-            && let Some(entry) = self.entries.get(selected)
-        {
-            match entry {
-                EntryState::Directory(v) => {
-                    let entries: BTreeMap<PathBuf, EntryState> = v
-                        .load_entry_states()?
-                        .into_iter()
-                        .map(|v| (v.path().to_owned(), v))
-                        .collect();
-
-                    self.entries.extend(entries);
-                    return Ok(());
-                }
-                EntryState::File(_) => {
-                    return Err(io::Error::new(
-                        ErrorKind::NotADirectory,
-                        "Can't load from a file",
-                    ));
-                }
-            }
+    pub fn get_selected_entry(&self) -> Option<&EntryState> {
+        if let Some(selected) = &self.selected {
+            self.entries.get(selected)
+        } else {
+            None
         }
-        Err(io::Error::new(
-            ErrorKind::NotADirectory,
-            "No valid entry selected",
-        ))
+    }
+
+    pub fn get_selected_entry_mut(&mut self) -> Option<&mut EntryState> {
+        if let Some(selected) = &self.selected {
+            self.entries.get_mut(selected)
+        } else {
+            None
+        }
+    }
+
+    pub fn toggle_dir(&mut self) -> io::Result<()> {
+        let selected_path = self
+            .selected
+            .clone()
+            .ok_or_else(|| io::Error::new(ErrorKind::NotADirectory, "No valid entry selected"))?;
+
+        let entry = self
+            .entries
+            .get_mut(&selected_path)
+            .ok_or_else(|| io::Error::new(ErrorKind::NotADirectory, "No valid entry selected"))?;
+
+        match entry {
+            EntryState::Directory(v) if v.collapsed => {
+                v.collapsed = false;
+                let new_entries = ExplorerState::load_dir(v)?;
+                self.entries.extend(new_entries);
+                Ok(())
+            }
+            EntryState::Directory(v) => {
+                let path = v.directory.path.clone();
+                v.collapsed = true;
+                self.entries
+                    .retain(|key, _| key == &path || !key.starts_with(&path));
+                Ok(())
+            }
+            EntryState::File(_) => Err(io::Error::new(
+                ErrorKind::NotADirectory,
+                "No valid entry selected",
+            )),
+        }
+    }
+
+    fn unload_dir(&mut self, directory: &DirectoryState) {
+        self.entries
+            .retain(|key, _| !key.starts_with(&directory.directory.path));
+    }
+
+    fn load_dir(directory: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {
+        Ok(directory
+            .load_entry_states()?
+            .into_iter()
+            .map(|v| (v.path().to_owned(), v))
+            .collect())
     }
 
     fn navigate_to(&mut self, new_path: Option<PathBuf>) {

@@ -9,7 +9,8 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Tab) => app.diode_state.switch_selection(),
         (_, KeyCode::Char('j')) => app.diode_state.move_down(),
         (_, KeyCode::Char('k')) => app.diode_state.move_up(),
-        (_, KeyCode::Enter) => app.diode_state.load_dir().unwrap(),
+        // TODO: This should only be available if the selected entry is a dir
+        (_, KeyCode::Enter) => app.diode_state.toggle_dir(),
         _ => {}
     }
 }

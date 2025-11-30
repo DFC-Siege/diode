@@ -22,7 +22,6 @@ async fn main() -> color_eyre::Result<()> {
     let left_explorer = ExplorerState::try_new(DirectoryState::from(Directory::try_from(
         current_dir.clone(),
     )?))?;
-    println!("{:#?}", left_explorer);
     let right_explorer = ExplorerState::try_new(DirectoryState::from(Directory::try_from(
         current_dir.clone(),
     )?))?;

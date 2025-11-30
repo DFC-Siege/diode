@@ -13,7 +13,7 @@ impl DirectoryState {
     pub fn new(directory: Directory) -> Self {
         Self {
             directory,
-            collapsed: false,
+            collapsed: true,
             selected: false,
         }
     }
