@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::{
     state::diode::entry_state::EntryState,
     ui::explorer::{directory, file},
@@ -8,13 +6,27 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Widget},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, StatefulWidget, Widget},
 };
+use std::path::Path;
 
 pub struct ExplorerPane {
     pub list: List<'static>,
     pub info: Paragraph<'static>,
     pub selected: bool,
+}
+
+#[derive(Debug)]
+pub struct ExplorerPaneState {
+    pub list_state: ListState,
+}
+
+impl ExplorerPaneState {
+    pub fn new() -> Self {
+        Self {
+            list_state: ListState::default(),
+        }
+    }
 }
 
 pub fn create_pane(entries: &[&EntryState], selected: bool, base_path: &Path) -> ExplorerPane {
@@ -49,8 +61,10 @@ fn create_info(entries: &[&EntryState]) -> Paragraph<'static> {
     Paragraph::new(text)
 }
 
-impl Widget for ExplorerPane {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl StatefulWidget for ExplorerPane {
+    type State = ExplorerPaneState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let border_color = if self.selected {
             Color::Cyan
         } else {
@@ -62,7 +76,7 @@ impl Widget for ExplorerPane {
         let inner = block.inner(area);
         block.render(area, buf);
         let layout = create_layout(inner);
-        self.list.render(layout[0], buf);
+        StatefulWidget::render(self.list, layout[0], buf, &mut state.list_state);
         self.info.render(layout[1], buf);
     }
 }

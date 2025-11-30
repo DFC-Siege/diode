@@ -24,7 +24,7 @@ impl App {
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         self.running = true;
         while self.running {
-            terminal.draw(|v| draw(v, &self.diode_state))?;
+            terminal.draw(|v| draw(v, &mut self.diode_state))?;
             self.handle_crossterm_events().await?;
         }
         Ok(())

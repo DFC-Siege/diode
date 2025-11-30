@@ -1,5 +1,5 @@
 pub mod app;
 mod body;
-mod explorer;
+pub mod explorer;
 mod footer;
 mod header;

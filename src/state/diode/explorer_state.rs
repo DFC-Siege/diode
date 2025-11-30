@@ -7,13 +7,17 @@ use std::{
 
 use futures::io;
 
-use crate::state::diode::{directory_state::DirectoryState, entry_state::EntryState};
+use crate::{
+    state::diode::{directory_state::DirectoryState, entry_state::EntryState},
+    ui::explorer::explorer_pane::ExplorerPaneState,
+};
 
 #[derive(Debug)]
 pub struct ExplorerState {
     pub root: DirectoryState,
     pub entries: BTreeMap<PathBuf, EntryState>,
     pub selected: Option<PathBuf>,
+    pub pane_state: ExplorerPaneState,
 }
 
 impl ExplorerState {
@@ -28,6 +32,7 @@ impl ExplorerState {
             root,
             entries,
             selected: None,
+            pane_state: ExplorerPaneState::new(),
         })
     }
 
@@ -120,6 +125,7 @@ impl ExplorerState {
 
         if next.is_some() {
             self.navigate_to(next);
+            self.pane_state.list_state.select_next()
         }
     }
 
@@ -133,6 +139,7 @@ impl ExplorerState {
 
             if prev.is_some() {
                 self.navigate_to(prev);
+                self.pane_state.list_state.select_previous()
             }
         }
     }
