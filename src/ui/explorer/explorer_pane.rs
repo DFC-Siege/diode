@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::{
     state::diode::entry_state::EntryState,
     ui::explorer::{directory, file},
@@ -15,9 +17,9 @@ pub struct ExplorerPane {
     pub selected: bool,
 }
 
-pub fn create_pane(entries: &[&EntryState], selected: bool) -> ExplorerPane {
+pub fn create_pane(entries: &[&EntryState], selected: bool, base_path: &Path) -> ExplorerPane {
     ExplorerPane {
-        list: create_list(entries),
+        list: create_list(entries, base_path),
         info: create_info(entries),
         selected,
     }
@@ -31,12 +33,12 @@ fn create_layout(area: Rect) -> [Rect; 2] {
     [rects[0], rects[1]]
 }
 
-fn create_list(entries: &[&EntryState]) -> List<'static> {
+fn create_list(entries: &[&EntryState], base_path: &Path) -> List<'static> {
     let items: Vec<ListItem> = entries
         .iter()
         .flat_map(|v| match v {
-            EntryState::Directory(dir) => directory::create_list_item(dir, 0),
-            EntryState::File(file) => vec![file::create_list_item(file, 0)],
+            EntryState::Directory(dir) => directory::create_list_item(dir, v.get_indent(base_path)),
+            EntryState::File(file) => vec![file::create_list_item(file, v.get_indent(base_path))],
         })
         .collect();
     List::new(items)

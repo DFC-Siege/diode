@@ -23,6 +23,7 @@ pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair; 2] {
             pane: explorer_pane::create_pane(
                 &left_entries,
                 diode_state.selected == Selection::Left,
+                &diode_state.left_state.root.directory.path,
             ),
         },
         LayoutPanePair {
@@ -30,6 +31,7 @@ pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair; 2] {
             pane: explorer_pane::create_pane(
                 &right_entries,
                 diode_state.selected == Selection::Right,
+                &diode_state.right_state.root.directory.path,
             ),
         },
     ]

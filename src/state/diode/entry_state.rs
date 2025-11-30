@@ -19,6 +19,13 @@ impl EntryState {
         }
     }
 
+    pub fn get_indent(&self, base_path: &Path) -> u8 {
+        let path = self.path();
+        path.strip_prefix(base_path)
+            .map(|p| p.components().count() as u8)
+            .unwrap_or(0)
+    }
+
     pub fn set_selected(&mut self, value: bool) {
         match self {
             EntryState::Directory(v) => v.selected = value,
