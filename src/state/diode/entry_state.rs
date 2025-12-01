@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{ffi::OsStr, path::Path};
 
 use crate::{
     file_management::entry::Entry,
@@ -16,6 +16,13 @@ impl EntryState {
         match self {
             EntryState::Directory(v) => &v.directory.path,
             EntryState::File(v) => &v.file.path,
+        }
+    }
+
+    pub fn name(&self) -> &OsStr {
+        match self {
+            EntryState::Directory(v) => &v.directory.name,
+            EntryState::File(v) => &v.file.name,
         }
     }
 

@@ -1,10 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
 use crate::{
-    state::diode::{
-        diode_state::{DiodeState, Selection},
-        entry_state::EntryState,
-    },
+    state::diode::diode_state::{DiodeState, Selection},
     ui::explorer::explorer_pane::{self, ExplorerPane},
 };
 
@@ -14,14 +11,12 @@ pub struct LayoutPanePair {
 }
 
 pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair; 2] {
-    let left_entries: Vec<&EntryState> = diode_state.left_state.entries.values().collect();
-    let right_entries: Vec<&EntryState> = diode_state.right_state.entries.values().collect();
     let rects = create_layout(area);
     [
         LayoutPanePair {
             rect: rects[0],
             pane: explorer_pane::create_pane(
-                &left_entries,
+                &diode_state.left_state,
                 diode_state.selected == Selection::Left,
                 &diode_state.left_state.root.directory.path,
             ),
@@ -29,7 +24,7 @@ pub fn new(area: Rect, diode_state: &DiodeState) -> [LayoutPanePair; 2] {
         LayoutPanePair {
             rect: rects[1],
             pane: explorer_pane::create_pane(
-                &right_entries,
+                &diode_state.right_state,
                 diode_state.selected == Selection::Right,
                 &diode_state.right_state.root.directory.path,
             ),

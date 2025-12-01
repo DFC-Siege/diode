@@ -44,13 +44,10 @@ impl DiodeState {
     }
 
     pub fn toggle_dir(&mut self) {
-        if let Err(e) = match self.selected {
+        match self.selected {
             Selection::Left => self.left_state.toggle_dir(),
             Selection::Right => self.right_state.toggle_dir(),
-        } {
-            // TODO: Should this be handled differently?
-            // Maybe a popup or notification?
-            eprint!("{}", e);
         }
+        .ok();
     }
 }
