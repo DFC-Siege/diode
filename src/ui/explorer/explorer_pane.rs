@@ -40,7 +40,7 @@ pub fn create_pane(entries: &[&EntryState], selected: bool, base_path: &Path) ->
 fn create_layout(area: Rect) -> [Rect; 2] {
     let rects = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)])
         .split(area);
     [rects[0], rects[1]]
 }
