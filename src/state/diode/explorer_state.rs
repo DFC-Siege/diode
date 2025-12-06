@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     io::ErrorKind,
     ops::Bound,
     path::{Path, PathBuf},
@@ -17,6 +17,7 @@ use crate::{
 pub struct ExplorerState {
     pub root: DirectoryState,
     pub entries: BTreeMap<PathBuf, EntryState>,
+    pub entries_cache: HashMap<PathBuf, EntryState>,
     pub selected: Option<PathBuf>,
     pub pane_state: ExplorerPaneState,
 }
@@ -24,10 +25,12 @@ pub struct ExplorerState {
 impl ExplorerState {
     pub fn try_new(root: DirectoryState) -> io::Result<Self> {
         let entries = Self::get_entries(&root)?;
+        let entries_cache = entries.clone().into_iter().collect();
 
         Ok(Self {
             root,
             entries,
+            entries_cache,
             selected: None,
             pane_state: ExplorerPaneState::new(),
         })
@@ -68,30 +71,58 @@ impl ExplorerState {
             .get_mut(&selected_path)
             .ok_or_else(|| io::Error::new(ErrorKind::NotADirectory, "No valid entry selected"))?;
 
-        match entry {
-            EntryState::Directory(v) if v.collapsed => {
-                v.collapsed = false;
-                let new_entries = ExplorerState::load_dir(v)?;
-                self.entries.extend(new_entries);
-                Ok(())
-            }
+        let (dir_path, was_collapsed) = match entry {
             EntryState::Directory(v) => {
-                let path = v.directory.path.clone();
-                v.collapsed = true;
-                self.entries
-                    .retain(|key, _| key == &path || !key.starts_with(&path));
-                Ok(())
+                let was_collapsed = v.collapsed;
+                v.collapsed = !v.collapsed;
+                (v.directory.path.clone(), was_collapsed)
             }
-            EntryState::File(_) => Err(io::Error::new(
-                ErrorKind::NotADirectory,
-                "No valid entry selected",
-            )),
+            EntryState::File(_) => {
+                return Err(io::Error::new(
+                    ErrorKind::NotADirectory,
+                    "No valid entry selected",
+                ));
+            }
+        };
+
+        if was_collapsed {
+            let dir_state = match self.entries.get(&dir_path) {
+                Some(EntryState::Directory(d)) => d,
+                _ => return Ok(()),
+            };
+            let mut new_entries = ExplorerState::load_dir(dir_state)?;
+            Self::apply_old_entry_states(&mut new_entries, &self.entries_cache);
+            new_entries.extend(Self::get_from_cache(&dir_path, &self.entries_cache));
+            self.entries.extend(new_entries);
+        } else {
+            self.unload_dir(&dir_path);
         }
+
+        Ok(())
     }
 
-    fn unload_dir(&mut self, directory: &DirectoryState) {
+    fn get_dir_cache(
+        cache: &HashMap<PathBuf, EntryState>,
+        directory: &DirectoryState,
+    ) -> HashMap<PathBuf, EntryState> {
+        cache
+            .iter()
+            .filter(|(key, _)| key.starts_with(&directory.directory.path))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
+    }
+
+    fn unload_dir(&mut self, path: &Path) {
+        let removed: HashMap<PathBuf, EntryState> = self
+            .entries
+            .iter()
+            .filter(|(key, _)| key.starts_with(path))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
+        self.entries_cache.extend(removed);
         self.entries
-            .retain(|key, _| !key.starts_with(&directory.directory.path));
+            .retain(|key, _| !key.starts_with(path) || key == path);
     }
 
     fn load_dir(directory: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {
@@ -170,40 +201,50 @@ impl ExplorerState {
         };
         let old_entries = self.entries.clone();
         self.entries = entries;
-        self.restore_entry_states(old_entries, old_root);
+        Self::restore_entry_states(&mut self.entries, &self.entries_cache, old_root);
+        self.entries.extend(old_entries);
     }
 
     fn restore_entry_states(
-        &mut self,
-        old_entries: BTreeMap<PathBuf, EntryState>,
+        entries: &mut BTreeMap<PathBuf, EntryState>,
+        old_entries: &HashMap<PathBuf, EntryState>,
         old_root: DirectoryState,
     ) {
-        for (path, new_state) in &mut self.entries {
-            if &old_root.directory.path == path {
-                match new_state {
-                    EntryState::Directory(v) => {
-                        v.collapsed = false;
-                    }
-                    _ => continue,
-                }
-                continue;
-            }
+        Self::uncollapse_old_root(entries, &old_root);
+        Self::apply_old_entry_states(entries, old_entries);
+    }
 
+    fn uncollapse_old_root(entries: &mut BTreeMap<PathBuf, EntryState>, old_root: &DirectoryState) {
+        if let Some(EntryState::Directory(v)) = entries.get_mut(&old_root.directory.path) {
+            v.collapsed = false;
+        }
+    }
+
+    fn apply_old_entry_states(
+        entries: &mut BTreeMap<PathBuf, EntryState>,
+        old_entries: &HashMap<PathBuf, EntryState>,
+    ) {
+        for (path, new_state) in entries {
             let Some(old_state) = old_entries.get(path) else {
                 continue;
             };
             match (new_state, old_state) {
                 (EntryState::Directory(v), EntryState::Directory(o)) => {
-                    v.selected = o.selected;
                     v.collapsed = o.collapsed;
                 }
-                (EntryState::File(v), EntryState::File(o)) => v.selected = o.selected,
-                (_, _) => {
-                    continue;
-                }
-            };
+                _ => continue,
+            }
         }
+    }
 
-        self.entries.extend(old_entries);
+    fn get_from_cache(
+        path: &Path,
+        cache: &HashMap<PathBuf, EntryState>,
+    ) -> HashMap<PathBuf, EntryState> {
+        cache
+            .iter()
+            .filter(|(k, _)| k.starts_with(path))
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
     }
 }
