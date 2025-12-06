@@ -22,11 +22,7 @@ pub struct ExplorerState {
 
 impl ExplorerState {
     pub fn try_new(root: DirectoryState) -> io::Result<Self> {
-        let entries: BTreeMap<PathBuf, EntryState> = root
-            .load_entry_states()?
-            .into_iter()
-            .map(|v| (v.path().to_owned(), v))
-            .collect();
+        let entries = Self::get_entries(&root)?;
 
         Ok(Self {
             root,
@@ -34,6 +30,14 @@ impl ExplorerState {
             selected: None,
             pane_state: ExplorerPaneState::new(),
         })
+    }
+
+    fn get_entries(root: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {
+        Ok(root
+            .load_entry_states()?
+            .into_iter()
+            .map(|v| (v.path().to_owned(), v))
+            .collect())
     }
 
     pub fn get_selected_entry(&self) -> Option<&EntryState> {
@@ -142,5 +146,18 @@ impl ExplorerState {
                 self.pane_state.list_state.select_previous()
             }
         }
+    }
+
+    pub fn set_parent_as_new_root(&mut self) {
+        let Ok(parent) = self.root.directory.get_parent_directory() else {
+            return;
+        };
+
+        self.root = parent.into();
+
+        let Ok(entries) = Self::get_entries(&self.root) else {
+            return;
+        };
+        self.entries = entries;
     }
 }

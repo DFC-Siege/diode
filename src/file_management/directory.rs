@@ -20,6 +20,15 @@ impl Directory {
             .map(|e| e.and_then(Entry::try_from))
             .collect()
     }
+
+    pub fn get_parent_directory(&self) -> io::Result<Directory> {
+        let mut path = self.path.to_owned();
+        if !path.pop() {
+            return Err(io::Error::other("already at root directory"));
+        }
+
+        path.try_into()
+    }
 }
 
 impl TryFrom<PathBuf> for Directory {

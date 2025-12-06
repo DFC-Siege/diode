@@ -50,4 +50,11 @@ impl DiodeState {
         }
         .ok();
     }
+
+    pub fn set_parent_as_root(&mut self) {
+        match self.selected {
+            Selection::Left => self.left_state.set_parent_as_new_root(),
+            Selection::Right => self.right_state.set_parent_as_new_root(),
+        };
+    }
 }

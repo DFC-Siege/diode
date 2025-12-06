@@ -11,6 +11,7 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Char('k')) => app.diode_state.move_up(),
         // TODO: This should only be available if the selected entry is a dir
         (_, KeyCode::Enter) => app.diode_state.toggle_dir(),
+        (_, KeyCode::Backspace) => app.diode_state.set_parent_as_root(),
         _ => {}
     }
 }
