@@ -5,9 +5,11 @@ use std::{
     path::PathBuf,
 };
 
+use log::error;
+
 use crate::file_management::entry::Entry;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Directory {
     pub name: OsString,
     pub path: PathBuf,
@@ -16,9 +18,15 @@ pub struct Directory {
 
 impl Directory {
     pub fn load_entries(&self) -> io::Result<Vec<Entry>> {
-        fs::read_dir(&self.path)?
-            .map(|e| e.and_then(Entry::try_from))
-            .collect()
+        Ok(fs::read_dir(&self.path)?
+            .filter_map(|e| {
+                let entry = e.ok()?;
+                let path = entry.path();
+                Entry::try_from(entry)
+                    .map_err(|err| error!("Skipping {:?}: {}", path, err))
+                    .ok()
+            })
+            .collect())
     }
 
     pub fn get_parent_directory(&self) -> io::Result<Directory> {

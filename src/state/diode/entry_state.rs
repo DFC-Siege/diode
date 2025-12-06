@@ -5,7 +5,7 @@ use crate::{
     state::diode::{directory_state::DirectoryState, file_state::FileState},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EntryState {
     Directory(DirectoryState),
     File(FileState),

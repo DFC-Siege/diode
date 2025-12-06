@@ -6,6 +6,7 @@ use std::{
 };
 
 use futures::io;
+use log::error;
 
 use crate::{
     state::diode::{directory_state::DirectoryState, entry_state::EntryState},
@@ -149,15 +150,60 @@ impl ExplorerState {
     }
 
     pub fn set_parent_as_new_root(&mut self) {
-        let Ok(parent) = self.root.directory.get_parent_directory() else {
-            return;
+        let parent = match self.root.directory.get_parent_directory() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed to get parent: {}", e);
+                return;
+            }
         };
 
+        let old_root = self.root.clone();
         self.root = parent.into();
 
-        let Ok(entries) = Self::get_entries(&self.root) else {
-            return;
+        let entries = match Self::get_entries(&self.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
         };
+        let old_entries = self.entries.clone();
         self.entries = entries;
+        self.restore_entry_states(old_entries, old_root);
+    }
+
+    fn restore_entry_states(
+        &mut self,
+        old_entries: BTreeMap<PathBuf, EntryState>,
+        old_root: DirectoryState,
+    ) {
+        for (path, new_state) in &mut self.entries {
+            if &old_root.directory.path == path {
+                match new_state {
+                    EntryState::Directory(v) => {
+                        v.collapsed = false;
+                    }
+                    _ => continue,
+                }
+                continue;
+            }
+
+            let Some(old_state) = old_entries.get(path) else {
+                continue;
+            };
+            match (new_state, old_state) {
+                (EntryState::Directory(v), EntryState::Directory(o)) => {
+                    v.selected = o.selected;
+                    v.collapsed = o.collapsed;
+                }
+                (EntryState::File(v), EntryState::File(o)) => v.selected = o.selected,
+                (_, _) => {
+                    continue;
+                }
+            };
+        }
+
+        self.entries.extend(old_entries);
     }
 }

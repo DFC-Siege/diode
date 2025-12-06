@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{file_management::directory::Directory, state::diode::entry_state::EntryState};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DirectoryState {
     pub directory: Directory,
     pub collapsed: bool,

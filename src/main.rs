@@ -12,12 +12,24 @@ use crate::{
         diode_state::DiodeState, directory_state::DirectoryState, explorer_state::ExplorerState,
     },
 };
+use log::debug;
+use simplelog::*;
+
 use app::App;
 use std::env;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
+
+    WriteLogger::init(
+        LevelFilter::Debug,
+        Config::default(),
+        std::fs::File::create("/tmp/diode.log").unwrap(),
+    )?;
+
+    debug!("Starting diode");
+
     let current_dir = env::current_dir()?;
     let left_explorer = ExplorerState::try_new(DirectoryState::from(Directory::try_from(
         current_dir.clone(),

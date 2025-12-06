@@ -1,6 +1,6 @@
 use crate::file_management::file::File;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileState {
     pub file: File,
     pub selected: bool,

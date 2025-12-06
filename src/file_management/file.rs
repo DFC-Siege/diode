@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct File {
     pub name: OsString,
     pub path: PathBuf,
