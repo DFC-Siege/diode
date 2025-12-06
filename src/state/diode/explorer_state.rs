@@ -5,6 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+
 use futures::io;
 use log::error;
 
@@ -243,7 +244,7 @@ impl ExplorerState {
     ) -> HashMap<PathBuf, EntryState> {
         cache
             .iter()
-            .filter(|(k, _)| k.starts_with(path))
+            .filter(|(k, _)| k.starts_with(path) && k != &path)
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect()
     }
