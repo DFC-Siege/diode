@@ -179,7 +179,7 @@ impl ExplorerState {
                 return;
             }
         };
-        let old_entries = self.entries.clone();
+        let old_entries = std::mem::take(&mut self.entries);
         self.entries = entries;
         Self::apply_old_entry_states(
             &mut self.entries,
@@ -191,16 +191,14 @@ impl ExplorerState {
     }
 
     pub fn set_dir_as_root(&mut self) {
-        let new_root = match self.get_selected_entry() {
-            Some(EntryState::Directory(v)) => v,
+        self.root = match self.get_selected_entry() {
+            Some(EntryState::Directory(v)) => v.to_owned(),
             _ => {
                 return;
             }
         };
 
-        self.root = new_root.to_owned();
-
-        let entries = match Self::get_entries(&self.root) {
+        let new_entries = match Self::get_entries(&self.root) {
             Ok(v) => v,
             Err(e) => {
                 error!("Failed load entries: {}", e);
@@ -208,26 +206,22 @@ impl ExplorerState {
             }
         };
 
-        self.entries_cache.extend(self.entries.to_owned());
-        self.entries = entries;
+        let old_entries = std::mem::replace(&mut self.entries, new_entries);
+        self.entries_cache.extend(old_entries);
+
         Self::uncollapse_dirs(&mut self.entries);
     }
 
     fn uncollapse_dirs(entries: &mut BTreeMap<PathBuf, EntryState>) {
-        for (_, entry) in entries.clone() {
-            let Some(parent) = entry.path().parent() else {
-                continue;
-            };
+        let paths_with_parents: Vec<(PathBuf, PathBuf)> = entries
+            .keys()
+            .filter_map(|path| path.parent().map(|p| (path.clone(), p.to_path_buf())))
+            .collect();
 
-            let Some(parent_entry) = entries.get_mut(parent) else {
-                continue;
-            };
-
-            let EntryState::Directory(dir) = parent_entry else {
-                continue;
-            };
-
-            dir.collapsed = false;
+        for (_, parent_path) in paths_with_parents {
+            if let Some(EntryState::Directory(dir)) = entries.get_mut(&parent_path) {
+                dir.collapsed = false;
+            }
         }
     }
 
