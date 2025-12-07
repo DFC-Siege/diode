@@ -181,7 +181,11 @@ impl ExplorerState {
         };
         let old_entries = self.entries.clone();
         self.entries = entries;
-        Self::apply_old_entry_states(&mut self.entries, &self.entries_cache);
+        Self::apply_old_entry_states(
+            &mut self.entries,
+            &self.entries_cache,
+            &self.root.directory.path,
+        );
         self.entries.extend(old_entries);
         Self::uncollapse_dirs(&mut self.entries);
     }
@@ -230,9 +234,14 @@ impl ExplorerState {
     fn apply_old_entry_states(
         entries: &mut BTreeMap<PathBuf, EntryState>,
         cache: &BTreeMap<PathBuf, EntryState>,
+        root: &Path,
     ) {
         let mut states_to_restore: BTreeMap<PathBuf, EntryState> = BTreeMap::new();
         for (path, old_state) in cache {
+            if !path.starts_with(root) {
+                continue;
+            }
+
             match old_state {
                 EntryState::Directory(v) => {
                     if !v.collapsed {
