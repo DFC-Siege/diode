@@ -25,7 +25,7 @@ pub struct ExplorerState {
 impl ExplorerState {
     pub fn try_new(root: DirectoryState) -> io::Result<Self> {
         let entries = Self::get_entries(&root)?;
-        let entries_cache = entries.clone().into_iter().collect();
+        let entries_cache = entries.clone();
 
         Ok(Self {
             root,
@@ -208,6 +208,11 @@ impl ExplorerState {
 
         let old_entries = std::mem::replace(&mut self.entries, new_entries);
         self.entries_cache.extend(old_entries);
+        Self::apply_old_entry_states(
+            &mut self.entries,
+            &self.entries_cache,
+            &self.root.directory.path,
+        );
 
         Self::uncollapse_dirs(&mut self.entries);
     }
