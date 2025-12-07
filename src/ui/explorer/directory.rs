@@ -1,12 +1,8 @@
-use crate::{
-    state::diode::{directory_state::DirectoryState, entry_state::EntryState},
-    ui::explorer::file,
-};
+use crate::state::diode::directory_state::DirectoryState;
 use ratatui::{
     style::{Color, Modifier, Style},
     widgets::ListItem,
 };
-use std::{iter::once, rc::Rc};
 
 pub fn create_list_item(directory: &DirectoryState, indent: u8) -> Vec<ListItem<'static>> {
     let mut items: Vec<ListItem> = Vec::new();
@@ -34,14 +30,4 @@ pub fn create_list_item(directory: &DirectoryState, indent: u8) -> Vec<ListItem<
 
     items.push(item);
     items
-}
-
-fn create_list(entries: &[Rc<EntryState>], indent: u8) -> Vec<ListItem<'_>> {
-    entries
-        .iter()
-        .flat_map(|v| match v.as_ref() {
-            EntryState::Directory(v) => create_list_item(v, indent),
-            EntryState::File(v) => once(file::create_list_item(v, indent)).collect(),
-        })
-        .collect()
 }

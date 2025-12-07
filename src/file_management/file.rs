@@ -9,6 +9,7 @@ use std::{
 pub struct File {
     pub name: OsString,
     pub path: PathBuf,
+    #[allow(dead_code)]
     pub metadata: Metadata,
 }
 

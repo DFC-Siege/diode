@@ -13,6 +13,8 @@ use crate::file_management::entry::Entry;
 pub struct Directory {
     pub name: OsString,
     pub path: PathBuf,
+
+    #[allow(dead_code)]
     pub metadata: Metadata,
 }
 

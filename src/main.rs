@@ -1,5 +1,3 @@
-// TODO: Remove
-#![allow(dead_code)]
 mod app;
 mod file_management;
 mod input_handling;

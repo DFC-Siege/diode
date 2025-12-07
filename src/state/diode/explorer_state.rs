@@ -52,14 +52,6 @@ impl ExplorerState {
         }
     }
 
-    pub fn get_selected_entry_mut(&mut self) -> Option<&mut EntryState> {
-        if let Some(selected) = &self.selected {
-            self.entries.get_mut(selected)
-        } else {
-            None
-        }
-    }
-
     pub fn toggle_dir(&mut self) -> io::Result<()> {
         let selected_path = self
             .selected
@@ -99,17 +91,6 @@ impl ExplorerState {
         }
 
         Ok(())
-    }
-
-    fn get_dir_cache(
-        cache: &BTreeMap<PathBuf, EntryState>,
-        directory: &DirectoryState,
-    ) -> BTreeMap<PathBuf, EntryState> {
-        cache
-            .iter()
-            .filter(|(key, _)| key.starts_with(&directory.directory.path))
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
     }
 
     fn unload_dir(&mut self, path: &Path) {
