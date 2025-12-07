@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
     io::ErrorKind,
     ops::Bound,
     path::{Path, PathBuf},
@@ -17,7 +17,7 @@ use crate::{
 pub struct ExplorerState {
     pub root: DirectoryState,
     pub entries: BTreeMap<PathBuf, EntryState>,
-    pub entries_cache: HashMap<PathBuf, EntryState>,
+    pub entries_cache: BTreeMap<PathBuf, EntryState>,
     pub selected: Option<PathBuf>,
     pub pane_state: ExplorerPaneState,
 }
@@ -91,7 +91,6 @@ impl ExplorerState {
                 _ => return Ok(()),
             };
             let mut new_entries = ExplorerState::load_dir(dir_state)?;
-            Self::apply_old_entry_states(&mut new_entries, &self.entries_cache);
             new_entries.extend(Self::get_from_cache(&dir_path, &self.entries_cache));
             self.entries.extend(new_entries);
             Self::uncollapse_dirs(&mut self.entries);
@@ -103,9 +102,9 @@ impl ExplorerState {
     }
 
     fn get_dir_cache(
-        cache: &HashMap<PathBuf, EntryState>,
+        cache: &BTreeMap<PathBuf, EntryState>,
         directory: &DirectoryState,
-    ) -> HashMap<PathBuf, EntryState> {
+    ) -> BTreeMap<PathBuf, EntryState> {
         cache
             .iter()
             .filter(|(key, _)| key.starts_with(&directory.directory.path))
@@ -114,7 +113,7 @@ impl ExplorerState {
     }
 
     fn unload_dir(&mut self, path: &Path) {
-        let removed: HashMap<PathBuf, EntryState> = self
+        let removed: BTreeMap<PathBuf, EntryState> = self
             .entries
             .iter()
             .filter(|(key, _)| key.starts_with(path))
@@ -223,8 +222,9 @@ impl ExplorerState {
                 return;
             }
         };
+
+        self.entries_cache.extend(self.entries.to_owned());
         self.entries = entries;
-        Self::apply_old_entry_states(&mut self.entries, &self.entries_cache);
         Self::uncollapse_dirs(&mut self.entries);
     }
 
@@ -248,10 +248,26 @@ impl ExplorerState {
 
     fn apply_old_entry_states(
         entries: &mut BTreeMap<PathBuf, EntryState>,
-        old_entries: &HashMap<PathBuf, EntryState>,
+        cache: &BTreeMap<PathBuf, EntryState>,
     ) {
-        for (path, new_state) in entries {
-            let Some(old_state) = old_entries.get(path) else {
+        let mut states_to_restore: BTreeMap<PathBuf, EntryState> = BTreeMap::new();
+        for (path, old_state) in cache {
+            match old_state {
+                EntryState::Directory(v) => {
+                    if !v.collapsed {
+                        states_to_restore.insert(path.to_owned(), old_state.to_owned());
+                    }
+                }
+                EntryState::File(_) => {
+                    if let Some(parent) = path.parent()
+                        && states_to_restore.contains_key(parent)
+                    {
+                        states_to_restore.insert(path.to_owned(), old_state.to_owned());
+                    }
+                }
+            };
+
+            let Some(new_state) = entries.get_mut(path) else {
                 continue;
             };
             match (new_state, old_state) {
@@ -261,12 +277,13 @@ impl ExplorerState {
                 _ => continue,
             }
         }
+        entries.extend(states_to_restore);
     }
 
     fn get_from_cache(
         path: &Path,
-        cache: &HashMap<PathBuf, EntryState>,
-    ) -> HashMap<PathBuf, EntryState> {
+        cache: &BTreeMap<PathBuf, EntryState>,
+    ) -> BTreeMap<PathBuf, EntryState> {
         cache
             .iter()
             .filter(|(k, _)| k.starts_with(path) && k != &path)
