@@ -94,6 +94,7 @@ impl ExplorerState {
             Self::apply_old_entry_states(&mut new_entries, &self.entries_cache);
             new_entries.extend(Self::get_from_cache(&dir_path, &self.entries_cache));
             self.entries.extend(new_entries);
+            Self::uncollapse_dirs(&mut self.entries);
         } else {
             self.unload_dir(&dir_path);
         }
@@ -189,7 +190,6 @@ impl ExplorerState {
             }
         };
 
-        let old_root = self.root.clone();
         self.root = parent.into();
 
         let entries = match Self::get_entries(&self.root) {
@@ -201,12 +201,12 @@ impl ExplorerState {
         };
         let old_entries = self.entries.clone();
         self.entries = entries;
-        Self::restore_entry_states(&mut self.entries, &self.entries_cache, old_root);
+        Self::apply_old_entry_states(&mut self.entries, &self.entries_cache);
         self.entries.extend(old_entries);
+        Self::uncollapse_dirs(&mut self.entries);
     }
 
     pub fn set_dir_as_root(&mut self) {
-        let old_root = self.root.clone();
         let new_root = match self.get_selected_entry() {
             Some(EntryState::Directory(v)) => v,
             _ => {
@@ -224,21 +224,25 @@ impl ExplorerState {
             }
         };
         self.entries = entries;
-        Self::restore_entry_states(&mut self.entries, &self.entries_cache, old_root);
+        Self::apply_old_entry_states(&mut self.entries, &self.entries_cache);
+        Self::uncollapse_dirs(&mut self.entries);
     }
 
-    fn restore_entry_states(
-        entries: &mut BTreeMap<PathBuf, EntryState>,
-        old_entries: &HashMap<PathBuf, EntryState>,
-        old_root: DirectoryState,
-    ) {
-        Self::uncollapse_old_root(entries, &old_root);
-        Self::apply_old_entry_states(entries, old_entries);
-    }
+    fn uncollapse_dirs(entries: &mut BTreeMap<PathBuf, EntryState>) {
+        for (_, entry) in entries.clone() {
+            let Some(parent) = entry.path().parent() else {
+                continue;
+            };
 
-    fn uncollapse_old_root(entries: &mut BTreeMap<PathBuf, EntryState>, old_root: &DirectoryState) {
-        if let Some(EntryState::Directory(v)) = entries.get_mut(&old_root.directory.path) {
-            v.collapsed = false;
+            let Some(parent_entry) = entries.get_mut(parent) else {
+                continue;
+            };
+
+            let EntryState::Directory(dir) = parent_entry else {
+                continue;
+            };
+
+            dir.collapsed = false;
         }
     }
 
