@@ -237,7 +237,7 @@ impl ExplorerState {
     ) {
         let mut states_to_restore: BTreeMap<PathBuf, EntryState> = BTreeMap::new();
         for (path, old_state) in cache {
-            if !path.starts_with(root) {
+            if !path.starts_with(root) || path == root {
                 continue;
             }
 
