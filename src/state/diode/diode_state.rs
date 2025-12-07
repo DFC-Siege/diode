@@ -57,4 +57,11 @@ impl DiodeState {
             Selection::Right => self.right_state.set_parent_as_new_root(),
         };
     }
+
+    pub fn set_dir_as_root(&mut self) {
+        match self.selected {
+            Selection::Left => self.left_state.set_dir_as_root(),
+            Selection::Right => self.right_state.set_dir_as_root(),
+        };
+    }
 }

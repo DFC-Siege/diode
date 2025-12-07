@@ -5,7 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-
 use futures::io;
 use log::error;
 
@@ -204,6 +203,28 @@ impl ExplorerState {
         self.entries = entries;
         Self::restore_entry_states(&mut self.entries, &self.entries_cache, old_root);
         self.entries.extend(old_entries);
+    }
+
+    pub fn set_dir_as_root(&mut self) {
+        let old_root = self.root.clone();
+        let new_root = match self.get_selected_entry() {
+            Some(EntryState::Directory(v)) => v,
+            _ => {
+                return;
+            }
+        };
+
+        self.root = new_root.to_owned();
+
+        let entries = match Self::get_entries(&self.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+        self.entries = entries;
+        Self::restore_entry_states(&mut self.entries, &self.entries_cache, old_root);
     }
 
     fn restore_entry_states(
