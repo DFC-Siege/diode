@@ -6,7 +6,7 @@ use std::{
 };
 
 use futures::io;
-use log::error;
+use log::{debug, error};
 
 use crate::{
     state::diode::{directory_state::DirectoryState, entry_state::EntryState},
@@ -127,6 +127,7 @@ impl ExplorerState {
             entry.set_selected(true);
         }
 
+        debug!("{:?}", new_path);
         self.selected = new_path;
     }
 
@@ -188,6 +189,7 @@ impl ExplorerState {
         );
         self.entries.extend(old_entries);
         Self::uncollapse_dirs(&mut self.entries);
+        self.navigate_to(Some(self.root.directory.path.to_owned()))
     }
 
     pub fn set_dir_as_root(&mut self) {
@@ -215,6 +217,7 @@ impl ExplorerState {
         );
 
         Self::uncollapse_dirs(&mut self.entries);
+        self.navigate_to(Some(self.root.directory.path.to_owned()))
     }
 
     fn uncollapse_dirs(entries: &mut BTreeMap<PathBuf, EntryState>) {
