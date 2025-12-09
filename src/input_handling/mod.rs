@@ -1,2 +1,2 @@
-mod directory;
+pub mod directory;
 pub mod input_handler;

@@ -1,0 +1,94 @@
+use std::io;
+
+use crate::state::diode::{
+    entry_state::EntryState,
+    explorer_state::{ExplorerState, get_entry, get_entry_mut},
+};
+
+use log::error;
+
+pub struct SelectedDirectory<'a> {
+    pub state: &'a mut ExplorerState,
+}
+
+impl SelectedDirectory<'_> {
+    pub fn toggle_dir(&mut self) -> io::Result<()> {
+        let selected_path = self
+            .state
+            .selected
+            .as_ref()
+            .expect("SelectedDirectory guarantees selection exists");
+
+        let directory_state = get_entry_mut!(self.state, selected_path, Directory);
+
+        directory_state.collapsed = !directory_state.collapsed;
+        let path = selected_path.clone();
+
+        if !directory_state.collapsed {
+            let mut new_entries = ExplorerState::load_dir(directory_state)?;
+            new_entries.extend(ExplorerState::get_from_cache(
+                &path,
+                &self.state.entries_cache,
+            ));
+            self.state.entries.extend(new_entries);
+            self.state.uncollapse_dirs();
+        } else {
+            self.state.unload_dir(&path);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_dir_as_root(&mut self) {
+        let selected_path = self
+            .state
+            .selected
+            .as_ref()
+            .expect("SelectedDirectory guarantees selection exists");
+
+        self.state.root = get_entry!(self.state, selected_path, Directory).clone();
+
+        let new_entries = match ExplorerState::get_entries(&self.state.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+
+        let old_entries = std::mem::replace(&mut self.state.entries, new_entries);
+        self.state.entries_cache.extend(old_entries);
+        self.state.apply_old_entry_states();
+
+        self.state.uncollapse_dirs();
+        self.state
+            .navigate_to(Some(self.state.root.directory.path.to_owned()))
+    }
+
+    pub fn set_parent_as_new_root(&mut self) {
+        let parent = match self.state.root.directory.get_parent_directory() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed to get parent: {}", e);
+                return;
+            }
+        };
+
+        self.state.root = parent.into();
+
+        let entries = match ExplorerState::get_entries(&self.state.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+        let old_entries = std::mem::take(&mut self.state.entries);
+        self.state.entries = entries;
+        self.state.apply_old_entry_states();
+        self.state.entries.extend(old_entries);
+        self.state.uncollapse_dirs();
+        self.state
+            .navigate_to(Some(self.state.root.directory.path.to_owned()))
+    }
+}

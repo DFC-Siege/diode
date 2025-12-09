@@ -1,6 +1,7 @@
-use crate::state::diode::explorer_state::SelectedDirectory;
 use crossterm::event::{KeyCode, KeyEvent};
 use log::error;
+
+use crate::state::diode::selected::directory::SelectedDirectory;
 
 pub fn on_key_event(key: KeyEvent, mut selected: SelectedDirectory) {
     match (key.modifiers, key.code) {

@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{app::App, input_handling::directory, state::diode::explorer_state::SelectedEntry};
+use crate::{app::App, input_handling::directory, state::diode::selected_entry::SelectedEntry};
 
 pub fn on_key_event(app: &mut App, key: KeyEvent) {
     let current_state = app.diode_state.get_current_state_mut();
