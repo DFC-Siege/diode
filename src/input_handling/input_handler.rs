@@ -10,6 +10,7 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Tab) => app.diode_state.switch_selection(),
         (_, KeyCode::Char('j')) => current_state.move_down(),
         (_, KeyCode::Char('k')) => current_state.move_up(),
+        (_, KeyCode::Backspace) => current_state.set_parent_as_new_root(),
         _ => {
             let Some(selected_state) = current_state.with_selected() else {
                 return;

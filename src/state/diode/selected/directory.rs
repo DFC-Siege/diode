@@ -88,7 +88,7 @@ impl SelectedDirectory<'_> {
         self.state.apply_old_entry_states();
         self.state.entries.extend(old_entries);
         self.state.uncollapse_dirs();
-        self.state
-            .navigate_to(Some(self.state.root.directory.path.to_owned()))
+        let first_key = self.state.entries.keys().next().cloned();
+        self.state.navigate_to(first_key)
     }
 }

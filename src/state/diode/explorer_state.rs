@@ -5,7 +5,7 @@ use std::{
 };
 
 use futures::io;
-use log::debug;
+use log::error;
 
 use crate::{
     state::diode::{
@@ -126,7 +126,6 @@ impl ExplorerState {
             entry.set_selected(true);
         }
 
-        debug!("{:?}", new_path);
         self.selected = new_path;
     }
 
@@ -220,5 +219,32 @@ impl ExplorerState {
             .filter(|(k, _)| k.starts_with(path) && k != &path)
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect()
+    }
+
+    pub fn set_parent_as_new_root(&mut self) {
+        let parent = match self.root.directory.get_parent_directory() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed to get parent: {}", e);
+                return;
+            }
+        };
+
+        self.root = parent.into();
+
+        let entries = match ExplorerState::get_entries(&self.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+        let old_entries = std::mem::take(&mut self.entries);
+        self.entries = entries;
+        self.apply_old_entry_states();
+        self.entries.extend(old_entries);
+        self.uncollapse_dirs();
+        let first_key = self.entries.keys().next().cloned();
+        self.navigate_to(first_key)
     }
 }
