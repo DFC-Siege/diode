@@ -29,39 +29,10 @@ impl DiodeState {
         };
     }
 
-    pub fn move_down(&mut self) {
+    pub fn get_current_state_mut(&mut self) -> &mut ExplorerState {
         match self.selected {
-            Selection::Left => self.left_state.move_down(),
-            Selection::Right => self.right_state.move_down(),
-        };
-    }
-
-    pub fn move_up(&mut self) {
-        match self.selected {
-            Selection::Left => self.left_state.move_up(),
-            Selection::Right => self.right_state.move_up(),
-        };
-    }
-
-    pub fn toggle_dir(&mut self) {
-        match self.selected {
-            Selection::Left => self.left_state.toggle_dir(),
-            Selection::Right => self.right_state.toggle_dir(),
+            Selection::Left => &mut self.left_state,
+            Selection::Right => &mut self.right_state,
         }
-        .ok();
-    }
-
-    pub fn set_parent_as_root(&mut self) {
-        match self.selected {
-            Selection::Left => self.left_state.set_parent_as_new_root(),
-            Selection::Right => self.right_state.set_parent_as_new_root(),
-        };
-    }
-
-    pub fn set_dir_as_root(&mut self) {
-        match self.selected {
-            Selection::Left => self.left_state.set_dir_as_root(),
-            Selection::Right => self.right_state.set_dir_as_root(),
-        };
     }
 }
