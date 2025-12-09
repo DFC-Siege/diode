@@ -64,31 +64,4 @@ impl SelectedDirectory<'_> {
         self.state
             .navigate_to(Some(self.state.root.directory.path.to_owned()))
     }
-
-    pub fn set_parent_as_new_root(&mut self) {
-        let parent = match self.state.root.directory.get_parent_directory() {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to get parent: {}", e);
-                return;
-            }
-        };
-
-        self.state.root = parent.into();
-
-        let entries = match ExplorerState::get_entries(&self.state.root) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed load entries: {}", e);
-                return;
-            }
-        };
-        let old_entries = std::mem::take(&mut self.state.entries);
-        self.state.entries = entries;
-        self.state.apply_old_entry_states();
-        self.state.entries.extend(old_entries);
-        self.state.uncollapse_dirs();
-        let first_key = self.state.entries.keys().next().cloned();
-        self.state.navigate_to(first_key)
-    }
 }

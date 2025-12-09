@@ -11,7 +11,6 @@ pub fn on_key_event(key: KeyEvent, mut selected: SelectedDirectory) {
             }
         }
         (_, KeyCode::Char('r')) => selected.set_dir_as_root(),
-        (_, KeyCode::Backspace) => selected.set_parent_as_new_root(),
         _ => {}
     }
 }
