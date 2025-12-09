@@ -1,6 +1,5 @@
 use std::{
     collections::BTreeMap,
-    io::ErrorKind,
     ops::Bound,
     path::{Path, PathBuf},
 };
@@ -12,6 +11,122 @@ use crate::{
     state::diode::{directory_state::DirectoryState, entry_state::EntryState},
     ui::explorer::explorer_pane::ExplorerPaneState,
 };
+
+macro_rules! get_entry {
+    ($self:expr, $path:expr, $variant:ident) => {
+        match $self
+            .entries
+            .get($path)
+            .expect("Path must exist in entries")
+        {
+            EntryState::$variant(entry) => entry,
+            _ => unreachable!(concat!("Entry must be a ", stringify!($variant))),
+        }
+    };
+}
+
+macro_rules! get_entry_mut {
+    ($self:expr, $path:expr, $variant:ident) => {
+        match $self
+            .entries
+            .get_mut($path)
+            .expect("Path must exist in entries")
+        {
+            EntryState::$variant(entry) => entry,
+            _ => unreachable!(concat!("Entry must be a ", stringify!($variant))),
+        }
+    };
+}
+
+pub enum SelectedEntry<'a> {
+    Directory(SelectedDirectory<'a>),
+}
+
+pub struct SelectedDirectory<'a> {
+    state: &'a mut ExplorerState,
+}
+
+impl SelectedDirectory<'_> {
+    pub fn toggle_dir(&mut self) -> io::Result<()> {
+        let selected_path = self
+            .state
+            .selected
+            .as_ref()
+            .expect("SelectedDirectory guarantees selection exists");
+
+        let directory_state = get_entry_mut!(self.state, selected_path, Directory);
+
+        directory_state.collapsed = !directory_state.collapsed;
+        let path = selected_path.clone();
+
+        if !directory_state.collapsed {
+            let mut new_entries = ExplorerState::load_dir(directory_state)?;
+            new_entries.extend(ExplorerState::get_from_cache(
+                &path,
+                &self.state.entries_cache,
+            ));
+            self.state.entries.extend(new_entries);
+            self.state.uncollapse_dirs();
+        } else {
+            self.state.unload_dir(&path);
+        }
+
+        Ok(())
+    }
+
+    pub fn set_dir_as_root(&mut self) {
+        let selected_path = self
+            .state
+            .selected
+            .as_ref()
+            .expect("SelectedDirectory guarantees selection exists");
+
+        self.state.root = get_entry!(self.state, selected_path, Directory).clone();
+
+        let new_entries = match ExplorerState::get_entries(&self.state.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+
+        let old_entries = std::mem::replace(&mut self.state.entries, new_entries);
+        self.state.entries_cache.extend(old_entries);
+        self.state.apply_old_entry_states();
+
+        self.state.uncollapse_dirs();
+        self.state
+            .navigate_to(Some(self.state.root.directory.path.to_owned()))
+    }
+
+    pub fn set_parent_as_new_root(&mut self) {
+        let parent = match self.state.root.directory.get_parent_directory() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed to get parent: {}", e);
+                return;
+            }
+        };
+
+        self.state.root = parent.into();
+
+        let entries = match ExplorerState::get_entries(&self.state.root) {
+            Ok(v) => v,
+            Err(e) => {
+                error!("Failed load entries: {}", e);
+                return;
+            }
+        };
+        let old_entries = std::mem::take(&mut self.state.entries);
+        self.state.entries = entries;
+        self.state.apply_old_entry_states();
+        self.state.entries.extend(old_entries);
+        self.state.uncollapse_dirs();
+        self.state
+            .navigate_to(Some(self.state.root.directory.path.to_owned()))
+    }
+}
 
 #[derive(Debug)]
 pub struct ExplorerState {
@@ -36,6 +151,15 @@ impl ExplorerState {
         })
     }
 
+    pub fn with_selected(&mut self) -> Option<SelectedEntry<'_>> {
+        match self.get_selected_entry()? {
+            EntryState::Directory(_) => {
+                Some(SelectedEntry::Directory(SelectedDirectory { state: self }))
+            }
+            EntryState::File(_) => None,
+        }
+    }
+
     fn get_entries(root: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {
         Ok(root
             .load_entry_states()?
@@ -50,47 +174,6 @@ impl ExplorerState {
         } else {
             None
         }
-    }
-
-    pub fn toggle_dir(&mut self) -> io::Result<()> {
-        let selected_path = self
-            .selected
-            .clone()
-            .ok_or_else(|| io::Error::new(ErrorKind::NotADirectory, "No valid entry selected"))?;
-
-        let entry = self
-            .entries
-            .get_mut(&selected_path)
-            .ok_or_else(|| io::Error::new(ErrorKind::NotADirectory, "No valid entry selected"))?;
-
-        let (dir_path, was_collapsed) = match entry {
-            EntryState::Directory(v) => {
-                let was_collapsed = v.collapsed;
-                v.collapsed = !v.collapsed;
-                (v.directory.path.clone(), was_collapsed)
-            }
-            EntryState::File(_) => {
-                return Err(io::Error::new(
-                    ErrorKind::NotADirectory,
-                    "No valid entry selected",
-                ));
-            }
-        };
-
-        if was_collapsed {
-            let dir_state = match self.entries.get(&dir_path) {
-                Some(EntryState::Directory(d)) => d,
-                _ => return Ok(()),
-            };
-            let mut new_entries = ExplorerState::load_dir(dir_state)?;
-            new_entries.extend(Self::get_from_cache(&dir_path, &self.entries_cache));
-            self.entries.extend(new_entries);
-            Self::uncollapse_dirs(&mut self.entries);
-        } else {
-            self.unload_dir(&dir_path);
-        }
-
-        Ok(())
     }
 
     fn unload_dir(&mut self, path: &Path) {
@@ -162,84 +245,24 @@ impl ExplorerState {
         }
     }
 
-    pub fn set_parent_as_new_root(&mut self) {
-        let parent = match self.root.directory.get_parent_directory() {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed to get parent: {}", e);
-                return;
-            }
-        };
-
-        self.root = parent.into();
-
-        let entries = match Self::get_entries(&self.root) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed load entries: {}", e);
-                return;
-            }
-        };
-        let old_entries = std::mem::take(&mut self.entries);
-        self.entries = entries;
-        Self::apply_old_entry_states(
-            &mut self.entries,
-            &self.entries_cache,
-            &self.root.directory.path,
-        );
-        self.entries.extend(old_entries);
-        Self::uncollapse_dirs(&mut self.entries);
-        self.navigate_to(Some(self.root.directory.path.to_owned()))
-    }
-
-    pub fn set_dir_as_root(&mut self) {
-        self.root = match self.get_selected_entry() {
-            Some(EntryState::Directory(v)) => v.to_owned(),
-            _ => {
-                return;
-            }
-        };
-
-        let new_entries = match Self::get_entries(&self.root) {
-            Ok(v) => v,
-            Err(e) => {
-                error!("Failed load entries: {}", e);
-                return;
-            }
-        };
-
-        let old_entries = std::mem::replace(&mut self.entries, new_entries);
-        self.entries_cache.extend(old_entries);
-        Self::apply_old_entry_states(
-            &mut self.entries,
-            &self.entries_cache,
-            &self.root.directory.path,
-        );
-
-        Self::uncollapse_dirs(&mut self.entries);
-        self.navigate_to(Some(self.root.directory.path.to_owned()))
-    }
-
-    fn uncollapse_dirs(entries: &mut BTreeMap<PathBuf, EntryState>) {
-        let paths_with_parents: Vec<(PathBuf, PathBuf)> = entries
+    pub fn uncollapse_dirs(&mut self) {
+        let paths_with_parents: Vec<(PathBuf, PathBuf)> = self
+            .entries
             .keys()
             .filter_map(|path| path.parent().map(|p| (path.clone(), p.to_path_buf())))
             .collect();
 
         for (_, parent_path) in paths_with_parents {
-            if let Some(EntryState::Directory(dir)) = entries.get_mut(&parent_path) {
+            if let Some(EntryState::Directory(dir)) = self.entries.get_mut(&parent_path) {
                 dir.collapsed = false;
             }
         }
     }
 
-    fn apply_old_entry_states(
-        entries: &mut BTreeMap<PathBuf, EntryState>,
-        cache: &BTreeMap<PathBuf, EntryState>,
-        root: &Path,
-    ) {
+    fn apply_old_entry_states(&mut self) {
         let mut states_to_restore: BTreeMap<PathBuf, EntryState> = BTreeMap::new();
-        for (path, old_state) in cache {
+        let root = &self.root.directory.path;
+        for (path, old_state) in &self.entries_cache {
             if !path.starts_with(root) || path == root {
                 continue;
             }
@@ -259,7 +282,7 @@ impl ExplorerState {
                 }
             };
 
-            let Some(new_state) = entries.get_mut(path) else {
+            let Some(new_state) = self.entries.get_mut(path) else {
                 continue;
             };
             match (new_state, old_state) {
@@ -269,10 +292,10 @@ impl ExplorerState {
                 _ => continue,
             }
         }
-        entries.extend(states_to_restore);
+        self.entries.extend(states_to_restore);
     }
 
-    fn get_from_cache(
+    pub fn get_from_cache(
         path: &Path,
         cache: &BTreeMap<PathBuf, EntryState>,
     ) -> BTreeMap<PathBuf, EntryState> {
