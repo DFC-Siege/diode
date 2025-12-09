@@ -10,10 +10,10 @@ use crate::{
         diode_state::DiodeState, directory_state::DirectoryState, explorer_state::ExplorerState,
     },
 };
-use log::debug;
-use simplelog::*;
+use log::{LevelFilter, debug};
 
 use app::App;
+use simplelog::{Config, WriteLogger};
 use std::env;
 
 #[tokio::main]
