@@ -6,7 +6,7 @@ use crate::{file_management::directory::Directory, state::diode::entry_state::En
 pub struct DirectoryState {
     pub directory: Directory,
     pub collapsed: bool,
-    pub focussed: bool,
+    pub selected: bool,
 }
 
 impl DirectoryState {
@@ -14,7 +14,7 @@ impl DirectoryState {
         Self {
             directory,
             collapsed: true,
-            focussed: false,
+            selected: false,
         }
     }
 

@@ -10,7 +10,7 @@ use log::error;
 use crate::{
     state::diode::{
         directory_state::DirectoryState, entry_state::EntryState,
-        focussed::directory::FocussedDirectory, focussed_entry::FocussedEntry,
+        selected::directory::SelectedDirectory, selected_entry::SelectedEntry,
     },
     ui::explorer::explorer_pane::ExplorerPaneState,
 };
@@ -49,7 +49,7 @@ pub struct ExplorerState {
     pub root: DirectoryState,
     pub entries: BTreeMap<PathBuf, EntryState>,
     pub entries_cache: BTreeMap<PathBuf, EntryState>,
-    pub focussed: Option<PathBuf>,
+    pub selected: Option<PathBuf>,
     pub pane_state: ExplorerPaneState,
 }
 
@@ -62,15 +62,15 @@ impl ExplorerState {
             root,
             entries,
             entries_cache,
-            focussed: None,
+            selected: None,
             pane_state: ExplorerPaneState::new(),
         })
     }
 
-    pub fn with_focussed(&mut self) -> Option<FocussedEntry<'_>> {
-        match self.get_focussed_entry()? {
+    pub fn with_selected(&mut self) -> Option<SelectedEntry<'_>> {
+        match self.get_selected_entry()? {
             EntryState::Directory(_) => {
-                Some(FocussedEntry::Directory(FocussedDirectory { state: self }))
+                Some(SelectedEntry::Directory(SelectedDirectory { state: self }))
             }
             EntryState::File(_) => None,
         }
@@ -84,9 +84,9 @@ impl ExplorerState {
             .collect())
     }
 
-    pub fn get_focussed_entry(&self) -> Option<&EntryState> {
-        if let Some(focussed) = &self.focussed {
-            self.entries.get(focussed)
+    pub fn get_selected_entry(&self) -> Option<&EntryState> {
+        if let Some(selected) = &self.selected {
+            self.entries.get(selected)
         } else {
             None
         }
@@ -114,25 +114,25 @@ impl ExplorerState {
     }
 
     pub fn navigate_to(&mut self, new_path: Option<PathBuf>) {
-        if let Some(current) = &self.focussed
+        if let Some(current) = &self.selected
             && let Some(entry) = self.entries.get_mut(current)
         {
-            entry.set_focussed(false);
+            entry.set_selected(false);
         }
 
         if let Some(ref path) = new_path
             && let Some(entry) = self.entries.get_mut(path)
         {
-            entry.set_focussed(true);
+            entry.set_selected(true);
         }
 
-        self.focussed = new_path;
+        self.selected = new_path;
     }
 
     pub fn move_down(&mut self) {
-        let next = if let Some(focussed) = &self.focussed {
+        let next = if let Some(selected) = &self.selected {
             self.entries
-                .range::<Path, _>((Bound::Excluded(focussed.as_path()), Bound::Unbounded))
+                .range::<Path, _>((Bound::Excluded(selected.as_path()), Bound::Unbounded))
                 .next()
                 .map(|(k, _)| k.clone())
         } else {
@@ -146,10 +146,10 @@ impl ExplorerState {
     }
 
     pub fn move_up(&mut self) {
-        if let Some(focussed) = &self.focussed {
+        if let Some(selected) = &self.selected {
             let prev = self
                 .entries
-                .range::<Path, _>((Bound::Unbounded, Bound::Excluded(focussed.as_path())))
+                .range::<Path, _>((Bound::Unbounded, Bound::Excluded(selected.as_path())))
                 .next_back()
                 .map(|(k, _)| k.clone());
 
