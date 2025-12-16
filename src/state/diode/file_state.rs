@@ -4,6 +4,7 @@ use crate::file_management::file::File;
 pub struct FileState {
     pub file: File,
     pub selected: bool,
+    pub marked: bool,
 }
 
 impl FileState {
@@ -11,6 +12,7 @@ impl FileState {
         Self {
             file,
             selected: false,
+            marked: false,
         }
     }
 }

@@ -5,7 +5,7 @@ use std::{
 };
 
 use futures::io;
-use log::error;
+use log::{debug, error};
 
 use crate::{
     state::diode::{
@@ -90,6 +90,18 @@ impl ExplorerState {
         } else {
             None
         }
+    }
+
+    pub fn get_selected_entry_mut(&mut self) -> Option<&mut EntryState> {
+        if let Some(selected) = &mut self.selected {
+            self.entries.get_mut(selected)
+        } else {
+            None
+        }
+    }
+
+    pub fn move_marked(&mut self) {
+        debug!("moved marked");
     }
 
     pub fn load_dir(directory: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {

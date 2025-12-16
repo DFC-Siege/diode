@@ -3,7 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::{app::App, input_handling::directory, state::diode::selected_entry::SelectedEntry};
 
 pub fn on_key_event(app: &mut App, key: KeyEvent) {
-    let current_state = app.diode_state.get_current_state_mut();
+    let (current_state, other_state) = app.diode_state.get_states_mut();
     match (key.modifiers, key.code) {
         (_, KeyCode::Esc | KeyCode::Char('q'))
         | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => app.quit(),
@@ -11,6 +11,14 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Char('j')) => current_state.move_down(),
         (_, KeyCode::Char('k')) => current_state.move_up(),
         (_, KeyCode::Backspace) => current_state.set_parent_as_new_root(),
+        (_, KeyCode::Char('m')) => other_state.move_marked(),
+        (_, KeyCode::Char(' ')) => {
+            let Some(selected_entry) = current_state.get_selected_entry_mut() else {
+                return;
+            };
+
+            selected_entry.toggle_marked();
+        }
         _ => {
             let Some(selected_state) = current_state.with_selected() else {
                 return;

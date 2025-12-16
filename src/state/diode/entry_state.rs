@@ -39,6 +39,13 @@ impl EntryState {
             EntryState::File(v) => v.selected = value,
         }
     }
+
+    pub fn toggle_marked(&mut self) {
+        match self {
+            EntryState::Directory(v) => v.marked = !v.marked,
+            EntryState::File(v) => v.marked = !v.marked,
+        }
+    }
 }
 
 impl PartialEq for EntryState {

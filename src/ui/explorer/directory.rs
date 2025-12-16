@@ -28,6 +28,14 @@ pub fn create_list_item(directory: &DirectoryState, indent: u8) -> Vec<ListItem<
         );
     }
 
+    if directory.marked {
+        item = item.style(
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        );
+    }
+
     items.push(item);
     items
 }

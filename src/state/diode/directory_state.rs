@@ -7,6 +7,7 @@ pub struct DirectoryState {
     pub directory: Directory,
     pub collapsed: bool,
     pub selected: bool,
+    pub marked: bool,
 }
 
 impl DirectoryState {
@@ -15,6 +16,7 @@ impl DirectoryState {
             directory,
             collapsed: true,
             selected: false,
+            marked: false,
         }
     }
 

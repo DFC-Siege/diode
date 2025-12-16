@@ -29,10 +29,10 @@ impl DiodeState {
         };
     }
 
-    pub fn get_current_state_mut(&mut self) -> &mut ExplorerState {
+    pub fn get_states_mut(&mut self) -> (&mut ExplorerState, &mut ExplorerState) {
         match self.selected {
-            Selection::Left => &mut self.left_state,
-            Selection::Right => &mut self.right_state,
+            Selection::Left => (&mut self.left_state, &mut self.right_state),
+            Selection::Right => (&mut self.right_state, &mut self.left_state),
         }
     }
 }

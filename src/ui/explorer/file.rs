@@ -16,5 +16,13 @@ pub fn create_list_item(file: &FileState, indent: u8) -> ListItem<'static> {
         );
     }
 
+    if file.marked {
+        item = item.style(
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        );
+    }
+
     item
 }
