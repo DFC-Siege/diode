@@ -3,5 +3,5 @@ pub mod directory_state;
 pub mod entry_state;
 pub mod explorer_state;
 pub mod file_state;
-pub mod selected;
-pub mod selected_entry;
+pub mod focussed;
+pub mod focussed_entry;

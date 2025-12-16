@@ -13,7 +13,7 @@ use std::path::Path;
 pub struct ExplorerPane {
     pub list: List<'static>,
     pub info: Paragraph<'static>,
-    pub selected: bool,
+    pub focussed: bool,
 }
 
 #[derive(Debug)]
@@ -31,14 +31,14 @@ impl ExplorerPaneState {
 
 pub fn create_pane(
     explorer_state: &ExplorerState,
-    selected: bool,
+    focussed: bool,
     base_path: &Path,
 ) -> ExplorerPane {
     let entries: Vec<&EntryState> = explorer_state.entries.values().collect();
     ExplorerPane {
         list: create_list(&entries, base_path),
         info: create_info(explorer_state),
-        selected,
+        focussed,
     }
 }
 
@@ -62,7 +62,7 @@ fn create_list(entries: &[&EntryState], base_path: &Path) -> List<'static> {
 }
 
 fn create_info(explorer_state: &ExplorerState) -> Paragraph<'static> {
-    if let Some(entry) = explorer_state.get_selected_entry() {
+    if let Some(entry) = explorer_state.get_focussed_entry() {
         let text = format!("Title: {}", entry.name().to_string_lossy());
         Paragraph::new(text)
     } else {
@@ -75,7 +75,7 @@ impl StatefulWidget for ExplorerPane {
     type State = ExplorerPaneState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let border_color = if self.selected {
+        let border_color = if self.focussed {
             Color::Cyan
         } else {
             Color::DarkGray

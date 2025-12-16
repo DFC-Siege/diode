@@ -7,22 +7,22 @@ use crate::state::diode::{
 
 use log::error;
 
-pub struct SelectedDirectory<'a> {
+pub struct FocussedDirectory<'a> {
     pub state: &'a mut ExplorerState,
 }
 
-impl SelectedDirectory<'_> {
+impl FocussedDirectory<'_> {
     pub fn toggle_dir(&mut self) -> io::Result<()> {
-        let selected_path = self
+        let focussed_path = self
             .state
-            .selected
+            .focussed
             .as_ref()
-            .expect("SelectedDirectory guarantees selection exists");
+            .expect("focussed directory guarantees selection exists");
 
-        let directory_state = get_entry_mut!(self.state, selected_path, Directory);
+        let directory_state = get_entry_mut!(self.state, focussed_path, Directory);
 
         directory_state.collapsed = !directory_state.collapsed;
-        let path = selected_path.clone();
+        let path = focussed_path.clone();
 
         if !directory_state.collapsed {
             let mut new_entries = ExplorerState::load_dir(directory_state)?;
@@ -40,13 +40,13 @@ impl SelectedDirectory<'_> {
     }
 
     pub fn set_dir_as_root(&mut self) {
-        let selected_path = self
+        let focussed_path = self
             .state
-            .selected
+            .focussed
             .as_ref()
-            .expect("SelectedDirectory guarantees selection exists");
+            .expect("focussed directory guarantees selection exists");
 
-        self.state.root = get_entry!(self.state, selected_path, Directory).clone();
+        self.state.root = get_entry!(self.state, focussed_path, Directory).clone();
 
         let new_entries = match ExplorerState::get_entries(&self.state.root) {
             Ok(v) => v,

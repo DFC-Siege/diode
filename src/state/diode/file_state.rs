@@ -3,14 +3,14 @@ use crate::file_management::file::File;
 #[derive(Debug, Clone)]
 pub struct FileState {
     pub file: File,
-    pub selected: bool,
+    pub focussed: bool,
 }
 
 impl FileState {
     pub fn new(file: File) -> Self {
         Self {
             file,
-            selected: false,
+            focussed: false,
         }
     }
 }

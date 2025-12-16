@@ -8,7 +8,7 @@ pub fn create_list_item(file: &FileState, indent: u8) -> ListItem<'static> {
     let tabs = "  ".repeat(indent as usize);
     let mut item = ListItem::new(format!("{}📄 {}", tabs, file.file.name.to_string_lossy()));
 
-    if file.selected {
+    if file.focussed {
         item = item.style(
             Style::default()
                 .fg(Color::Yellow)

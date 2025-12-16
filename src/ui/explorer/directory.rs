@@ -20,7 +20,7 @@ pub fn create_list_item(directory: &DirectoryState, indent: u8) -> Vec<ListItem<
         )),
     };
 
-    if directory.selected {
+    if directory.focussed {
         item = item.style(
             Style::default()
                 .fg(Color::Yellow)

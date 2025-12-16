@@ -33,10 +33,10 @@ impl EntryState {
             .unwrap_or(0)
     }
 
-    pub fn set_selected(&mut self, value: bool) {
+    pub fn set_focussed(&mut self, value: bool) {
         match self {
-            EntryState::Directory(v) => v.selected = value,
-            EntryState::File(v) => v.selected = value,
+            EntryState::Directory(v) => v.focussed = value,
+            EntryState::File(v) => v.focussed = value,
         }
     }
 }
