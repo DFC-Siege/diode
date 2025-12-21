@@ -1,7 +1,7 @@
-use std::{ffi::OsStr, path::Path};
+use std::{ffi::OsStr, io, path::Path};
 
 use crate::{
-    file_management::entry::Entry,
+    file_management::entry::{self, Entry},
     state::diode::{directory_state::DirectoryState, file_state::FileState},
 };
 
@@ -17,6 +17,10 @@ impl EntryState {
             EntryState::Directory(v) => &v.directory.path,
             EntryState::File(v) => &v.file.path,
         }
+    }
+
+    pub fn move_entry(&mut self, path: &Path) -> io::Result<()> {
+        entry::move_entry(self.path(), path)
     }
 
     pub fn name(&self) -> &OsStr {

@@ -11,7 +11,11 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Char('j')) => current_state.move_down(),
         (_, KeyCode::Char('k')) => current_state.move_up(),
         (_, KeyCode::Backspace) => current_state.set_parent_as_new_root(),
-        (_, KeyCode::Char('m')) => other_state.move_marked(),
+        (_, KeyCode::Char('m')) => {
+            if let Some(selected) = &current_state.selected {
+                other_state.move_marked(selected);
+            }
+        }
         (_, KeyCode::Char(' ')) => {
             let Some(selected_entry) = current_state.get_selected_entry_mut() else {
                 return;
