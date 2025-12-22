@@ -18,7 +18,7 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
                 return;
             };
 
-            let entries = match other_state.move_marked(selected) {
+            let (old_entries, new_entries) = match other_state.move_marked(selected) {
                 Ok(entries) => entries,
                 Err(e) => {
                     error!("{}", e);
@@ -26,7 +26,7 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
                 }
             };
 
-            current_state.reload(entries)
+            current_state.reload(old_entries, new_entries)
         }
         (_, KeyCode::Char(' ')) => {
             current_state.toggle_marked();

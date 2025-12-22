@@ -109,7 +109,10 @@ impl ExplorerState {
             .for_each(|(_, v)| v.set_marked(!is_marked));
     }
 
-    pub fn move_marked(&mut self, destination: &Path) -> io::Result<Vec<EntryState>> {
+    pub fn move_marked(
+        &mut self,
+        destination: &Path,
+    ) -> io::Result<(Vec<EntryState>, Vec<EntryState>)> {
         let marked_keys: Vec<PathBuf> = self
             .entries
             .iter()
@@ -125,6 +128,7 @@ impl ExplorerState {
             destination
         };
 
+        let mut old_entries = Vec::new();
         let mut moved_entries = Vec::new();
         let mut root_moves: Vec<(PathBuf, PathBuf)> = Vec::new();
 
@@ -145,17 +149,24 @@ impl ExplorerState {
             };
 
             if let Some(mut entry) = self.entries.remove(&p) {
+                old_entries.push(entry.clone());
                 entry.set_path(new_path);
                 entry.set_selected(false);
                 moved_entries.push(entry);
             }
         }
 
-        Ok(moved_entries)
+        self.reload(old_entries.clone(), moved_entries.clone());
+
+        Ok((old_entries, moved_entries))
     }
 
-    pub fn reload(&mut self, entries: Vec<EntryState>) {
-        for entry in entries {
+    pub fn reload(&mut self, old_entries: Vec<EntryState>, new_entries: Vec<EntryState>) {
+        for entry in old_entries {
+            self.entries.remove(entry.path());
+        }
+
+        for entry in new_entries {
             self.entries.insert(entry.path().to_owned(), entry);
         }
     }
