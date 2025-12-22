@@ -1,7 +1,10 @@
-use std::{ffi::OsStr, io, path::Path};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 
 use crate::{
-    file_management::entry::{self, Entry},
+    file_management::entry::Entry,
     state::diode::{directory_state::DirectoryState, file_state::FileState},
 };
 
@@ -19,14 +22,17 @@ impl EntryState {
         }
     }
 
-    pub fn move_entry(&mut self, path: &Path) -> io::Result<()> {
-        entry::move_entry(self.path(), path)
-    }
-
     pub fn name(&self) -> &OsStr {
         match self {
             EntryState::Directory(v) => &v.directory.name,
             EntryState::File(v) => &v.file.name,
+        }
+    }
+
+    pub fn set_path(&mut self, path: PathBuf) {
+        match self {
+            EntryState::Directory(v) => v.directory.path = path,
+            EntryState::File(v) => v.file.path = path,
         }
     }
 
@@ -41,6 +47,13 @@ impl EntryState {
         match self {
             EntryState::Directory(v) => v.selected = value,
             EntryState::File(v) => v.selected = value,
+        }
+    }
+
+    pub fn is_marked(&self) -> bool {
+        match self {
+            EntryState::Directory(v) => v.marked,
+            EntryState::File(v) => v.marked,
         }
     }
 

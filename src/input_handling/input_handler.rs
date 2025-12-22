@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use log::error;
 
 use crate::{app::App, input_handling::directory, state::diode::selected_entry::SelectedEntry};
 
@@ -12,9 +13,19 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
         (_, KeyCode::Char('k')) => current_state.move_up(),
         (_, KeyCode::Backspace) => current_state.set_parent_as_new_root(),
         (_, KeyCode::Char('m')) => {
-            if let Some(selected) = &current_state.selected {
-                other_state.move_marked(selected);
-            }
+            let Some(selected) = &current_state.selected else {
+                return;
+            };
+
+            let entries = match other_state.move_marked(selected) {
+                Ok(entries) => entries,
+                Err(e) => {
+                    error!("{}", e);
+                    return;
+                }
+            };
+
+            current_state.reload(entries)
         }
         (_, KeyCode::Char(' ')) => {
             let Some(selected_entry) = current_state.get_selected_entry_mut() else {

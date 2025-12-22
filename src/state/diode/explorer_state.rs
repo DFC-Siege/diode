@@ -8,6 +8,7 @@ use futures::io;
 use log::error;
 
 use crate::{
+    file_management::entry,
     state::diode::{
         directory_state::DirectoryState, entry_state::EntryState,
         selected::directory::SelectedDirectory, selected_entry::SelectedEntry,
@@ -100,13 +101,51 @@ impl ExplorerState {
         }
     }
 
-    pub fn move_marked(&mut self, path: &Path) {
-        let Some(selected) = self.get_selected_entry_mut() else {
-            return;
+    pub fn move_marked(&mut self, destination: &Path) -> io::Result<Vec<EntryState>> {
+        let paths: Vec<PathBuf> = self
+            .entries
+            .iter()
+            .filter(|(_, v)| v.is_marked())
+            .map(|(v, _)| v.clone())
+            .collect();
+
+        let mut moved_paths: Vec<PathBuf> = Vec::new();
+        let mut moved_entries: Vec<EntryState> = Vec::new();
+
+        let dir = if destination.is_file() {
+            let Some(dir) = destination.parent() else {
+                return Err(io::Error::other("Destination is file but has no parent?"));
+            };
+            dir
+        } else {
+            destination
         };
 
-        if let Err(error) = selected.move_entry(path) {
-            error!("Error moving entry: {:?}", error.to_string())
+        for p in paths {
+            let is_child_of_moved = moved_paths.iter().any(|v| p.starts_with(v));
+
+            if !is_child_of_moved {
+                entry::move_entry(&p, dir)?;
+                moved_paths.push(p.clone());
+            }
+
+            if let Some(mut entry) = self.entries.remove(&p) {
+                let new_path = dir.join(p.file_name().unwrap());
+                entry.set_path(new_path);
+                moved_entries.push(entry);
+            }
+
+            self.entries_cache.remove(&p);
+        }
+
+        Ok(moved_entries)
+    }
+
+    pub fn reload(&mut self, entries: Vec<EntryState>) {
+        for entry in entries {
+            self.entries_cache
+                .insert(entry.path().to_owned(), entry.clone());
+            self.entries.insert(entry.path().to_owned(), entry);
         }
     }
 
