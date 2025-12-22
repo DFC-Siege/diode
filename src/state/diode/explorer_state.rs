@@ -113,6 +113,9 @@ impl ExplorerState {
         &mut self,
         destination: &Path,
     ) -> io::Result<(Vec<EntryState>, Vec<EntryState>)> {
+        // TODO: This should move the cursor to a non marked place instead
+        self.move_up();
+
         let marked_keys: Vec<PathBuf> = self
             .entries
             .iter()
