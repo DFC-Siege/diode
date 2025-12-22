@@ -110,42 +110,41 @@ impl ExplorerState {
     }
 
     pub fn move_marked(&mut self, destination: &Path) -> io::Result<Vec<EntryState>> {
-        let paths: Vec<PathBuf> = self
+        let marked_keys: Vec<PathBuf> = self
             .entries
             .iter()
             .filter(|(_, v)| v.is_marked())
-            .map(|(v, _)| v.clone())
+            .map(|(k, _)| k.clone())
             .collect();
 
-        let mut moved_paths: Vec<PathBuf> = Vec::new();
-        let mut moved_entries: Vec<EntryState> = Vec::new();
-
-        let dir = if destination.is_file() {
-            let Some(dir) = destination.parent() else {
-                return Err(io::Error::other("Destination is file but has no parent?"));
-            };
-            dir
+        let target_dir = if destination.is_file() {
+            destination
+                .parent()
+                .ok_or_else(|| io::Error::other("No parent"))?
         } else {
             destination
         };
 
-        for p in paths {
-            let is_child_of_moved = moved_paths.iter().any(|v| p.starts_with(v));
+        let mut moved_entries = Vec::new();
+        let mut root_moves: Vec<(PathBuf, PathBuf)> = Vec::new();
 
-            if !is_child_of_moved {
-                entry::move_entry(&p, dir)?;
-                moved_paths.push(p.clone());
-            }
+        for p in marked_keys {
+            let parent_move = root_moves.iter().find(|(old, _)| p.starts_with(old));
+
+            let new_path = if let Some((old_root, new_root)) = parent_move {
+                let relative = p.strip_prefix(old_root).unwrap();
+                new_root.join(relative)
+            } else {
+                entry::move_entry(&p, target_dir)?;
+                let file_name = p
+                    .file_name()
+                    .ok_or_else(|| io::Error::other(format!("No file name: {}", p.display())))?;
+                let new_path = target_dir.join(file_name);
+                root_moves.push((p.clone(), new_path.clone()));
+                new_path
+            };
 
             if let Some(mut entry) = self.entries.remove(&p) {
-                let Some(file_name) = p.file_name() else {
-                    error!(
-                        "Failed to get file name of path: {}",
-                        entry.path().to_string_lossy()
-                    );
-                    continue;
-                };
-                let new_path = dir.join(file_name);
                 entry.set_path(new_path);
                 entry.set_selected(false);
                 moved_entries.push(entry);
