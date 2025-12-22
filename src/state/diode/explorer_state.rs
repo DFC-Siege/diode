@@ -145,6 +145,7 @@ impl ExplorerState {
                 };
                 let new_path = dir.join(file_name);
                 entry.set_path(new_path);
+                entry.set_selected(false);
                 moved_entries.push(entry);
             }
 
