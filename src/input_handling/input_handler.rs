@@ -6,12 +6,13 @@ use crate::{app::App, input_handling::directory, state::diode::selected_entry::S
 pub fn on_key_event(app: &mut App, key: KeyEvent) {
     let (current_state, other_state) = app.diode_state.get_states_mut();
     match (key.modifiers, key.code) {
-        (_, KeyCode::Esc | KeyCode::Char('q'))
+        (_, KeyCode::Char('q'))
         | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => app.quit(),
         (_, KeyCode::Tab) => app.diode_state.switch_selection(),
         (_, KeyCode::Char('j')) => current_state.move_down(),
         (_, KeyCode::Char('k')) => current_state.move_up(),
         (_, KeyCode::Backspace) => current_state.set_parent_as_new_root(),
+        (_, KeyCode::Esc) => current_state.clear_marked(),
         (_, KeyCode::Char('m')) => {
             let Some(selected) = &current_state.selected else {
                 return;

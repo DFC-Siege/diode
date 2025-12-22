@@ -50,6 +50,13 @@ impl EntryState {
         }
     }
 
+    pub fn set_marked(&mut self, value: bool) {
+        match self {
+            EntryState::Directory(v) => v.marked = value,
+            EntryState::File(v) => v.marked = value,
+        }
+    }
+
     pub fn is_marked(&self) -> bool {
         match self {
             EntryState::Directory(v) => v.marked,

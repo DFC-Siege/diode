@@ -101,6 +101,12 @@ impl ExplorerState {
         }
     }
 
+    pub fn clear_marked(&mut self) {
+        self.entries
+            .iter_mut()
+            .for_each(|(_, v)| v.set_marked(false));
+    }
+
     pub fn move_marked(&mut self, destination: &Path) -> io::Result<Vec<EntryState>> {
         let paths: Vec<PathBuf> = self
             .entries
@@ -130,7 +136,14 @@ impl ExplorerState {
             }
 
             if let Some(mut entry) = self.entries.remove(&p) {
-                let new_path = dir.join(p.file_name().unwrap());
+                let Some(file_name) = p.file_name() else {
+                    error!(
+                        "Failed to get file name of path: {}",
+                        entry.path().to_string_lossy()
+                    );
+                    continue;
+                };
+                let new_path = dir.join(file_name);
                 entry.set_path(new_path);
                 moved_entries.push(entry);
             }
