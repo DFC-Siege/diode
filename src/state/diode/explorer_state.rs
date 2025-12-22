@@ -203,10 +203,13 @@ impl ExplorerState {
         let next = {
             let mut entries = self.get_visible_entries();
             match &self.selected {
-                Some(selected) => entries
-                    .skip_while(|(k, _)| *k != selected)
-                    .nth(1)
-                    .map(|(k, _)| k.clone()),
+                Some(selected) => {
+                    let mut iter = entries.skip_while(|(k, _)| *k != selected);
+                    match iter.next() {
+                        Some(_) => iter.next().map(|(k, _)| k.clone()),
+                        None => self.get_visible_entries().next().map(|(k, _)| k.clone()),
+                    }
+                }
                 None => entries.next().map(|(k, _)| k.clone()),
             }
         };
@@ -218,20 +221,26 @@ impl ExplorerState {
     }
 
     pub fn move_up(&mut self) {
-        let prev = {
-            let entries = self.get_visible_entries().rev();
+        let next = {
+            let mut entries = self.get_visible_entries().rev();
             match &self.selected {
-                Some(selected) => entries
-                    .skip_while(|(k, _)| *k != selected)
-                    .nth(1)
-                    .map(|(k, _)| k.clone()),
-                None => None,
+                Some(selected) => {
+                    let mut iter = entries.skip_while(|(k, _)| *k != selected);
+                    match iter.next() {
+                        Some(_) => iter.next().map(|(k, _)| k.clone()),
+                        None => self
+                            .get_visible_entries()
+                            .next_back()
+                            .map(|(k, _)| k.clone()),
+                    }
+                }
+                None => entries.next().map(|(k, _)| k.clone()),
             }
         };
 
-        if let Some(path) = prev {
+        if let Some(path) = next {
             self.navigate_to(Some(path));
-            self.pane_state.list_state.select_previous();
+            self.pane_state.list_state.select_next();
         }
     }
 
