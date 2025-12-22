@@ -34,7 +34,11 @@ pub fn create_pane(
     selected: bool,
     base_path: &Path,
 ) -> ExplorerPane {
-    let entries: Vec<&EntryState> = explorer_state.entries.values().collect();
+    let entries: Vec<&EntryState> = explorer_state
+        .get_visible_entries()
+        .map(|(_, v)| v)
+        .collect();
+
     ExplorerPane {
         list: create_list(&entries, base_path),
         info: create_info(explorer_state),

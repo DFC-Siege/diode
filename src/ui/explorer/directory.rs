@@ -20,18 +20,18 @@ pub fn create_list_item(directory: &DirectoryState, indent: u8) -> Vec<ListItem<
         )),
     };
 
-    if directory.selected {
-        item = item.style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        );
-    }
-
     if directory.marked {
         item = item.style(
             Style::default()
                 .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        );
+    }
+
+    if directory.selected {
+        item = item.style(
+            Style::default()
+                .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         );
     }

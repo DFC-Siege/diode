@@ -22,20 +22,12 @@ impl SelectedDirectory<'_> {
         let directory_state = get_entry_mut!(self.state, selected_path, Directory);
 
         directory_state.collapsed = !directory_state.collapsed;
-        let path = selected_path.clone();
 
         if !directory_state.collapsed {
-            let mut new_entries = ExplorerState::load_dir(directory_state)?;
-            new_entries.extend(ExplorerState::get_from_cache(
-                &path,
-                &self.state.entries_cache,
-            ));
-            self.state.entries.extend(new_entries);
-            self.state.uncollapse_dirs();
-        } else {
-            self.state.unload_dir(&path);
+            for (k, v) in ExplorerState::load_dir(directory_state)? {
+                self.state.entries.entry(k).or_insert(v);
+            }
         }
-
         Ok(())
     }
 
@@ -56,11 +48,10 @@ impl SelectedDirectory<'_> {
             }
         };
 
-        let old_entries = std::mem::replace(&mut self.state.entries, new_entries);
-        self.state.entries_cache.extend(old_entries);
-        self.state.apply_old_entry_states();
+        for (k, v) in new_entries {
+            self.state.entries.entry(k).or_insert(v);
+        }
 
-        self.state.uncollapse_dirs();
         self.state
             .navigate_to(Some(self.state.root.directory.path.to_owned()))
     }

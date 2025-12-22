@@ -23,7 +23,7 @@ async fn main() -> color_eyre::Result<()> {
     WriteLogger::init(
         LevelFilter::Debug,
         Config::default(),
-        std::fs::File::create("/tmp/diode.log").unwrap(),
+        std::fs::File::create("/tmp/diode.log")?,
     )?;
 
     debug!("Starting diode");

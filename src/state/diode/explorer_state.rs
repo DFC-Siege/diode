@@ -1,6 +1,5 @@
 use std::{
     collections::BTreeMap,
-    ops::Bound,
     path::{Path, PathBuf},
 };
 
@@ -49,7 +48,6 @@ pub(crate) use get_entry_mut;
 pub struct ExplorerState {
     pub root: DirectoryState,
     pub entries: BTreeMap<PathBuf, EntryState>,
-    pub entries_cache: BTreeMap<PathBuf, EntryState>,
     pub selected: Option<PathBuf>,
     pub pane_state: ExplorerPaneState,
 }
@@ -57,12 +55,10 @@ pub struct ExplorerState {
 impl ExplorerState {
     pub fn try_new(root: DirectoryState) -> io::Result<Self> {
         let entries = Self::get_entries(&root)?;
-        let entries_cache = entries.clone();
 
         Ok(Self {
             root,
             entries,
-            entries_cache,
             selected: None,
             pane_state: ExplorerPaneState::new(),
         })
@@ -154,8 +150,6 @@ impl ExplorerState {
                 entry.set_selected(false);
                 moved_entries.push(entry);
             }
-
-            self.entries_cache.remove(&p);
         }
 
         Ok(moved_entries)
@@ -163,8 +157,6 @@ impl ExplorerState {
 
     pub fn reload(&mut self, entries: Vec<EntryState>) {
         for entry in entries {
-            self.entries_cache
-                .insert(entry.path().to_owned(), entry.clone());
             self.entries.insert(entry.path().to_owned(), entry);
         }
     }
@@ -179,19 +171,6 @@ impl ExplorerState {
                 (v.path().to_owned(), v)
             })
             .collect())
-    }
-
-    pub fn unload_dir(&mut self, path: &Path) {
-        let removed: BTreeMap<PathBuf, EntryState> = self
-            .entries
-            .iter()
-            .filter(|(key, _)| key.starts_with(path))
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
-
-        self.entries_cache.extend(removed);
-        self.entries
-            .retain(|key, _| !key.starts_with(path) || key == path);
     }
 
     pub fn navigate_to(&mut self, new_path: Option<PathBuf>) {
@@ -211,95 +190,54 @@ impl ExplorerState {
     }
 
     pub fn move_down(&mut self) {
-        let next = if let Some(selected) = &self.selected {
-            self.entries
-                .range::<Path, _>((Bound::Excluded(selected.as_path()), Bound::Unbounded))
-                .next()
-                .map(|(k, _)| k.clone())
-        } else {
-            self.entries.keys().next().cloned()
+        let next = {
+            let mut entries = self.get_visible_entries();
+            match &self.selected {
+                Some(selected) => entries
+                    .skip_while(|(k, _)| *k != selected)
+                    .nth(1)
+                    .map(|(k, _)| k.clone()),
+                None => entries.next().map(|(k, _)| k.clone()),
+            }
         };
 
-        if next.is_some() {
-            self.navigate_to(next);
-            self.pane_state.list_state.select_next()
+        if let Some(path) = next {
+            self.navigate_to(Some(path));
+            self.pane_state.list_state.select_next();
         }
     }
 
     pub fn move_up(&mut self) {
-        if let Some(selected) = &self.selected {
-            let prev = self
-                .entries
-                .range::<Path, _>((Bound::Unbounded, Bound::Excluded(selected.as_path())))
-                .next_back()
-                .map(|(k, _)| k.clone());
-
-            if prev.is_some() {
-                self.navigate_to(prev);
-                self.pane_state.list_state.select_previous()
+        let prev = {
+            let entries = self.get_visible_entries().rev();
+            match &self.selected {
+                Some(selected) => entries
+                    .skip_while(|(k, _)| *k != selected)
+                    .nth(1)
+                    .map(|(k, _)| k.clone()),
+                None => None,
             }
+        };
+
+        if let Some(path) = prev {
+            self.navigate_to(Some(path));
+            self.pane_state.list_state.select_previous();
         }
     }
 
-    pub fn uncollapse_dirs(&mut self) {
-        let paths_with_parents: Vec<(PathBuf, PathBuf)> = self
+    pub fn get_visible_entries(&self) -> impl DoubleEndedIterator<Item = (&PathBuf, &EntryState)> {
+        let collapsed: Vec<&PathBuf> = self
             .entries
-            .keys()
-            .filter_map(|path| path.parent().map(|p| (path.clone(), p.to_path_buf())))
+            .iter()
+            .filter_map(|(k, v)| match v {
+                EntryState::Directory(d) if d.collapsed => Some(k),
+                _ => None,
+            })
             .collect();
 
-        for (_, parent_path) in paths_with_parents {
-            if let Some(EntryState::Directory(dir)) = self.entries.get_mut(&parent_path) {
-                dir.collapsed = false;
-            }
-        }
-    }
-
-    pub fn apply_old_entry_states(&mut self) {
-        let mut states_to_restore: BTreeMap<PathBuf, EntryState> = BTreeMap::new();
-        let root = &self.root.directory.path;
-        for (path, old_state) in &self.entries_cache {
-            if !path.starts_with(root) || path == root {
-                continue;
-            }
-
-            match old_state {
-                EntryState::Directory(v) => {
-                    if !v.collapsed {
-                        states_to_restore.insert(path.to_owned(), old_state.to_owned());
-                    }
-                }
-                EntryState::File(_) => {
-                    if let Some(parent) = path.parent()
-                        && states_to_restore.contains_key(parent)
-                    {
-                        states_to_restore.insert(path.to_owned(), old_state.to_owned());
-                    }
-                }
-            };
-
-            let Some(new_state) = self.entries.get_mut(path) else {
-                continue;
-            };
-            match (new_state, old_state) {
-                (EntryState::Directory(v), EntryState::Directory(o)) => {
-                    v.collapsed = o.collapsed;
-                }
-                _ => continue,
-            }
-        }
-        self.entries.extend(states_to_restore);
-    }
-
-    pub fn get_from_cache(
-        path: &Path,
-        cache: &BTreeMap<PathBuf, EntryState>,
-    ) -> BTreeMap<PathBuf, EntryState> {
-        cache
+        self.entries
             .iter()
-            .filter(|(k, _)| k.starts_with(path) && k != &path)
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()
+            .filter(move |(k, _)| !collapsed.iter().any(|c| k.starts_with(c) && k != c))
     }
 
     pub fn set_parent_as_new_root(&mut self) {
@@ -322,9 +260,7 @@ impl ExplorerState {
         };
         let old_entries = std::mem::take(&mut self.entries);
         self.entries = entries;
-        self.apply_old_entry_states();
         self.entries.extend(old_entries);
-        self.uncollapse_dirs();
         let first_key = self.entries.keys().next().cloned();
         self.navigate_to(first_key)
     }
