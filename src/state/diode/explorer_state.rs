@@ -93,18 +93,24 @@ impl ExplorerState {
         }
     }
 
-    pub fn get_selected_entry_mut(&mut self) -> Option<&mut EntryState> {
-        if let Some(selected) = &mut self.selected {
-            self.entries.get_mut(selected)
-        } else {
-            None
-        }
-    }
-
     pub fn clear_marked(&mut self) {
         self.entries
             .iter_mut()
             .for_each(|(_, v)| v.set_marked(false));
+    }
+
+    pub fn toggle_marked(&mut self) {
+        let (path, is_marked) = {
+            let Some(selected) = self.get_selected_entry() else {
+                return;
+            };
+            (selected.path().to_owned(), selected.is_marked())
+        };
+
+        self.entries
+            .iter_mut()
+            .filter(|(k, _)| k.starts_with(&path))
+            .for_each(|(_, v)| v.set_marked(!is_marked));
     }
 
     pub fn move_marked(&mut self, destination: &Path) -> io::Result<Vec<EntryState>> {
@@ -164,10 +170,14 @@ impl ExplorerState {
     }
 
     pub fn load_dir(directory: &DirectoryState) -> io::Result<BTreeMap<PathBuf, EntryState>> {
+        let is_marked = directory.marked;
         Ok(directory
             .load_entry_states()?
             .into_iter()
-            .map(|v| (v.path().to_owned(), v))
+            .map(|mut v| {
+                v.set_marked(is_marked);
+                (v.path().to_owned(), v)
+            })
             .collect())
     }
 

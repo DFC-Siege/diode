@@ -29,11 +29,7 @@ pub fn on_key_event(app: &mut App, key: KeyEvent) {
             current_state.reload(entries)
         }
         (_, KeyCode::Char(' ')) => {
-            let Some(selected_entry) = current_state.get_selected_entry_mut() else {
-                return;
-            };
-
-            selected_entry.toggle_marked();
+            current_state.toggle_marked();
         }
         _ => {
             let Some(selected_state) = current_state.with_selected() else {
